@@ -23,6 +23,7 @@
             <th>Started</th>
             <th>Finished</th>
             <th>Status</th>
+            <th>Results</th>
             <th>Model</th>
             <th>Runs/test</th>
         </tr>
@@ -34,6 +35,16 @@
             <td>{{ r.started_at }}</td>
             <td>{{ r.finished_at or '—' }}</td>
             <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
+            <td>
+                {% if r.results_total %}
+                    {% set failed = r.results_total - r.results_passed %}
+                    <span class="pill pill-{{ 'ok' if failed == 0 else 'fail' }}">
+                        {{ r.results_passed }}/{{ r.results_total }} passed
+                    </span>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
             <td><code>{{ r.model }}</code></td>
             <td>{{ r.runs_per_test }}</td>
         </tr>

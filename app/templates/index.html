@@ -24,24 +24,6 @@
 {% endif %}
 
 <form id="run-form" method="post" action="/runs">
-    <table class="tests-table">
-        <thead>
-            <tr>
-                <th class="col-check"><input type="checkbox" id="select-all"></th>
-                <th>ID</th>
-                <th>Prompt</th>
-                <th>Tool assertions</th>
-                <th class="col-mutates">Writes</th>
-                <th class="col-actions"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in tests %}
-            {% include "_test_row.html" %}
-            {% endfor %}
-        </tbody>
-    </table>
-
     <div class="run-bar">
         <label>
             Model
@@ -67,10 +49,29 @@
             Runs per test
             <input type="number" name="runs_per_test" value="5" min="1" max="50" style="width: 4rem;">
         </label>
-        <button type="submit" class="btn btn-primary" {% if not env_status.openai or not env_status.calendly %}disabled{% endif %}>
+        <button type="submit" class="btn btn-primary"
+                {% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}disabled{% endif %}>
             Run selected
         </button>
     </div>
+
+    <table class="tests-table">
+        <thead>
+            <tr>
+                <th class="col-check"><input type="checkbox" id="select-all"></th>
+                <th>ID</th>
+                <th>Prompt</th>
+                <th>Tool assertions</th>
+                <th class="col-mutates">Writes</th>
+                <th class="col-actions"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tests %}
+            {% include "_test_row.html" %}
+            {% endfor %}
+        </tbody>
+    </table>
 </form>
 
 <script>

@@ -325,9 +325,18 @@ def get_run(run_id: int) -> dict[str, Any] | None:
 
 
 def list_runs(limit: int = 50) -> list[dict[str, Any]]:
+    """Return runs with aggregated passed/total counts joined from run_results."""
     with connect() as conn:
         rows = conn.execute(
-            "SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)
+            """SELECT runs.*,
+                      COUNT(rr.id)                 AS results_total,
+                      COALESCE(SUM(rr.passed), 0)  AS results_passed
+               FROM runs
+               LEFT JOIN run_results rr ON rr.run_id = runs.id
+               GROUP BY runs.id
+               ORDER BY runs.id DESC
+               LIMIT ?""",
+            (limit,),
         ).fetchall()
     return [dict(r) for r in rows]
 
