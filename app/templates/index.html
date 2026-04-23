@@ -46,7 +46,7 @@
         <label>
             Model
             <select name="model">
-                {% set model_options = ['gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
+                {% set model_options = ['gpt-5.4', 'gpt-5.3', 'gpt-5.2', 'gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
                 {% if model not in model_options %}
                     <option value="{{ model }}" selected>{{ model }}</option>
                 {% endif %}
