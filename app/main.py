@@ -32,7 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
-from app import calendly_oauth, db, runner
+from app import calendly_oauth, db, provider_models, runner
 from test_prompt import MCP_SERVER_URL, MODEL
 
 load_dotenv()
@@ -51,6 +51,41 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
+    _refresh_available_models()
+
+
+OPENAI_PRESET    = ["gpt-5.4", "gpt-5.3", "gpt-5.2", "gpt-5.1", "gpt-5",
+                    "gpt-5-mini", "gpt-4.1", "gpt-4o", "gpt-4o-mini"]
+ANTHROPIC_PRESET = ["claude-opus-4-7", "claude-sonnet-4-6",
+                    "claude-haiku-4-5-20251001"]
+
+# Populated on startup + after any key save. Empty list means "not probed"
+# (key missing or fetch failed) — callers fall back to the preset.
+_available_models: dict[str, list[str]] = {"openai": [], "anthropic": []}
+
+
+def _refresh_available_models(provider: str | None = None) -> None:
+    """Fetch /v1/models for the given provider (or both) using current env keys."""
+    if provider in (None, "openai"):
+        key = os.environ.get("OPENAI_API_KEY")
+        _available_models["openai"] = provider_models.fetch_openai(key) if key else []
+    if provider in (None, "anthropic"):
+        key = os.environ.get("ANTHROPIC_API_KEY")
+        _available_models["anthropic"] = provider_models.fetch_anthropic(key) if key else []
+
+
+def _model_options() -> dict[str, list[str]]:
+    """Preset models filtered to what the configured keys can actually access."""
+    return {
+        "openai": (
+            [m for m in OPENAI_PRESET if m in _available_models["openai"]]
+            if _available_models["openai"] else OPENAI_PRESET
+        ),
+        "anthropic": (
+            [m for m in ANTHROPIC_PRESET if m in _available_models["anthropic"]]
+            if _available_models["anthropic"] else ANTHROPIC_PRESET
+        ),
+    }
 
 
 def _env_status() -> dict[str, bool]:
@@ -61,6 +96,12 @@ def _env_status() -> dict[str, bool]:
     }
 
 
+_PROVIDER_FOR_KEY = {
+    "OPENAI_API_KEY":    "openai",
+    "ANTHROPIC_API_KEY": "anthropic",
+}
+
+
 def _set_env(name: str, value: str) -> None:
     """Persist a credential to .env and update the running process env."""
     # python-dotenv requires the .env file to exist.
@@ -69,6 +110,8 @@ def _set_env(name: str, value: str) -> None:
     set_key(ENV_FILE, name, value)
     os.environ[name] = value
     _reset_provider_clients()
+    if name in _PROVIDER_FOR_KEY:
+        _refresh_available_models(_PROVIDER_FOR_KEY[name])
 
 
 def _clear_env(name: str) -> None:
@@ -76,6 +119,8 @@ def _clear_env(name: str) -> None:
         unset_key(ENV_FILE, name)
     os.environ.pop(name, None)
     _reset_provider_clients()
+    if name in _PROVIDER_FOR_KEY:
+        _refresh_available_models(_PROVIDER_FOR_KEY[name])
 
 
 def _reset_provider_clients() -> None:
@@ -93,10 +138,11 @@ def index(request: Request) -> HTMLResponse:
         request,
         "index.html",
         {
-            "tests":       db.list_tests(),
-            "model":       MODEL,
-            "mcp_url":     MCP_SERVER_URL,
-            "env_status":  _env_status(),
+            "tests":          db.list_tests(),
+            "model":          MODEL,
+            "mcp_url":        MCP_SERVER_URL,
+            "env_status":     _env_status(),
+            "model_options":  _model_options(),
         },
     )
 
@@ -262,9 +308,10 @@ def settings_page(request: Request, error: str = "", ok: str = "") -> HTMLRespon
     return templates.TemplateResponse(
         request, "settings.html",
         {
-            "env_status": _env_status(),
-            "error":      error,
-            "ok":         ok,
+            "env_status":        _env_status(),
+            "available_models":  _available_models,
+            "error":             error,
+            "ok":                ok,
         },
     )
 
@@ -308,9 +355,10 @@ _pending_oauth: dict[str, dict] = {}
 
 
 def _oauth_redirect_uri(request: Request) -> str:
-    # Use the request URL base so the redirect URI matches the port the user is
-    # actually on (useful if someone runs uvicorn on a non-default port).
-    base = str(request.base_url).rstrip("/")
+    # Use the request URL base so the port matches wherever uvicorn is bound.
+    # Force `localhost` over `127.0.0.1` — Calendly's DCR endpoint rejects
+    # raw IP redirect URIs (verified against CLI flow, which used localhost).
+    base = str(request.base_url).rstrip("/").replace("127.0.0.1", "localhost")
     return f"{base}/auth/calendly/callback"
 
 

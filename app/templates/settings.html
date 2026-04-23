@@ -67,6 +67,18 @@
         <form method="post" action="/settings/clear/OPENAI_API_KEY" class="settings-actions">
             <button type="submit" class="btn btn-secondary">Clear</button>
         </form>
+        {% if available_models.openai %}
+            <details class="available-models">
+                <summary>{{ available_models.openai|length }} models accessible</summary>
+                <ul>
+                    {% for m in available_models.openai %}<li><code>{{ m }}</code></li>{% endfor %}
+                </ul>
+            </details>
+        {% else %}
+            <p class="muted" style="margin-top:0.5rem;font-size:0.8rem;">
+                Could not list models (key may be invalid or API unreachable).
+            </p>
+        {% endif %}
         {% endif %}
     </section>
 
@@ -93,6 +105,18 @@
         <form method="post" action="/settings/clear/ANTHROPIC_API_KEY" class="settings-actions">
             <button type="submit" class="btn btn-secondary">Clear</button>
         </form>
+        {% if available_models.anthropic %}
+            <details class="available-models">
+                <summary>{{ available_models.anthropic|length }} models accessible</summary>
+                <ul>
+                    {% for m in available_models.anthropic %}<li><code>{{ m }}</code></li>{% endfor %}
+                </ul>
+            </details>
+        {% else %}
+            <p class="muted" style="margin-top:0.5rem;font-size:0.8rem;">
+                Could not list models (key may be invalid or API unreachable).
+            </p>
+        {% endif %}
         {% endif %}
     </section>
 

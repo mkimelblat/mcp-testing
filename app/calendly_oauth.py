@@ -76,7 +76,11 @@ def register(registration_endpoint: str, redirect_uri: str) -> str:
         },
         timeout=10,
     )
-    r.raise_for_status()
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"DCR {r.status_code} from {registration_endpoint} "
+            f"(redirect_uri={redirect_uri}): {r.text}"
+        )
     return r.json()["client_id"]
 
 

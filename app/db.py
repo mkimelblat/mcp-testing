@@ -325,12 +325,12 @@ def get_run(run_id: int) -> dict[str, Any] | None:
 
 
 def list_runs(limit: int = 50) -> list[dict[str, Any]]:
-    """Return runs with aggregated passed/total counts joined from run_results."""
+    """Return runs with aggregate and per-test pass/total breakdowns."""
     with connect() as conn:
         rows = conn.execute(
             """SELECT runs.*,
-                      COUNT(rr.id)                 AS results_total,
-                      COALESCE(SUM(rr.passed), 0)  AS results_passed
+                      COUNT(rr.id)                AS results_total,
+                      COALESCE(SUM(rr.passed), 0) AS results_passed
                FROM runs
                LEFT JOIN run_results rr ON rr.run_id = runs.id
                GROUP BY runs.id
@@ -338,7 +338,35 @@ def list_runs(limit: int = 50) -> list[dict[str, Any]]:
                LIMIT ?""",
             (limit,),
         ).fetchall()
-    return [dict(r) for r in rows]
+        runs = [dict(r) for r in rows]
+
+        run_ids = [r["id"] for r in runs]
+        if run_ids:
+            placeholders = ",".join("?" * len(run_ids))
+            per_test = conn.execute(
+                f"""SELECT run_id, test_id,
+                           COUNT(*)                 AS total,
+                           COALESCE(SUM(passed), 0) AS passed,
+                           MIN(id)                  AS first_result_id
+                    FROM run_results
+                    WHERE run_id IN ({placeholders})
+                    GROUP BY run_id, test_id
+                    ORDER BY run_id DESC, first_result_id""",
+                run_ids,
+            ).fetchall()
+        else:
+            per_test = []
+
+    buckets: dict[int, list[dict[str, Any]]] = {}
+    for row in per_test:
+        buckets.setdefault(row["run_id"], []).append({
+            "test_id": row["test_id"],
+            "passed":  row["passed"],
+            "total":   row["total"],
+        })
+    for r in runs:
+        r["tests"] = buckets.get(r["id"], [])
+    return runs
 
 
 def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: dict[str, Any]) -> None:

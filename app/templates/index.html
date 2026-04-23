@@ -7,7 +7,6 @@
         <h1>Tests</h1>
         <p class="subtitle">
             {{ tests|length }} test{{ '' if tests|length == 1 else 's' }}
-            &middot; model <code>{{ model }}</code>
             &middot; MCP <code>{{ mcp_url }}</code>
         </p>
     </div>
@@ -28,19 +27,21 @@
         <label>
             Model
             <select name="model">
+                {% if model_options.openai %}
                 <optgroup label="OpenAI">
-                    {% set openai_models = ['gpt-5.4', 'gpt-5.3', 'gpt-5.2', 'gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
-                    {% for m in openai_models %}
+                    {% for m in model_options.openai %}
                         <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
                 </optgroup>
+                {% endif %}
+                {% if model_options.anthropic %}
                 <optgroup label="Anthropic">
-                    {% set anthropic_models = ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'] %}
-                    {% for m in anthropic_models %}
+                    {% for m in model_options.anthropic %}
                         <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
                 </optgroup>
-                {% if model not in openai_models and model not in anthropic_models %}
+                {% endif %}
+                {% if model not in model_options.openai and model not in model_options.anthropic %}
                     <option value="{{ model }}" selected>{{ model }}</option>
                 {% endif %}
             </select>

@@ -50,13 +50,19 @@ Visit [http://localhost:8000](http://localhost:8000).
 - **Tests** — shows the 8 default workflow tests. Click a test id to edit the
   prompt, expectation, or tool assertions. Click **+ New test** to add one.
 - Pick a **Model** from the dropdown (OpenAI and Anthropic models are
-  grouped). Check one or more tests, set "runs per test", click **Run
-  selected**. You're redirected to the run detail page where results stream
-  in live via SSE. Mutating tests (e.g. cancel, book) are auto-capped at 1
-  iteration.
-- **Runs** in the nav shows history — click any run to see its full detail,
-  including which model it was run with.
-- **Settings** manages the three credentials at any time.
+  grouped). The dropdown is auto-filtered to models your saved API keys can
+  actually access — a call to `/v1/models` on each provider runs on startup
+  and after any key save. Check one or more tests, set "runs per test",
+  click **Run selected**. You're redirected to the run detail page where
+  results stream in live via SSE. Mutating tests (e.g. cancel, book) are
+  auto-capped at 1 iteration.
+- **Runs** in the nav shows history — each row lists which tests were
+  included, with a per-test pass/total ratio (green = all passed, orange =
+  partial, red = all failed) alongside the aggregate Results pill. Click
+  any run to see its full detail, including which model it was run with.
+- **Settings** manages the three credentials at any time, and shows a
+  collapsible "N models accessible" list under each saved key so you can
+  verify what your OpenAI / Anthropic project has access to.
 
 ## Using the CLI
 

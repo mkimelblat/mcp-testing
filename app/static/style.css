@@ -82,6 +82,12 @@ code {
 .tests-table .col-id    { width: 14rem; font-weight: 500; }
 .tests-table .col-mutates { width: 5rem; text-align: center; }
 .tests-table .col-actions { width: 8rem; text-align: right; white-space: nowrap; }
+.tests-table .col-tests   { max-width: 22rem; font-size: 0.85rem; }
+.tests-table .col-tests code { font-size: 0.85em; }
+.test-ratio      { font-weight: 500; font-size: 0.8rem; margin-left: 0.15rem; }
+.test-ratio-ok   { color: #2e7d32; }
+.test-ratio-warn { color: #b46b00; }
+.test-ratio-fail { color: #c62828; }
 .tool-asserts { margin-bottom: 0.25rem; font-size: 0.85rem; }
 .tool-asserts code { margin-right: 0.25rem; }
 .tool-label { color: #666; margin-right: 0.35rem; font-size: 0.8rem; }
@@ -221,3 +227,15 @@ code {
     box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
 }
 .settings-actions { margin-top: 0.75rem; }
+
+.available-models {
+    margin-top: 0.75rem; font-size: 0.85rem;
+}
+.available-models summary {
+    cursor: pointer; color: #0066cc; user-select: none;
+}
+.available-models ul {
+    margin: 0.5rem 0 0; padding-left: 1.25rem;
+    max-height: 12rem; overflow-y: auto;
+}
+.available-models li { margin-bottom: 0.15rem; }
