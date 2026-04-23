@@ -45,17 +45,16 @@
     <div class="run-bar">
         <label>
             Model
-            <input type="text" name="model" value="{{ model }}" list="model-options"
-                   style="width: 10rem;">
+            <select name="model">
+                {% set model_options = ['gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
+                {% if model not in model_options %}
+                    <option value="{{ model }}" selected>{{ model }}</option>
+                {% endif %}
+                {% for m in model_options %}
+                    <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
         </label>
-        <datalist id="model-options">
-            <option value="gpt-5.1"></option>
-            <option value="gpt-5"></option>
-            <option value="gpt-5-mini"></option>
-            <option value="gpt-4.1"></option>
-            <option value="gpt-4o"></option>
-            <option value="gpt-4o-mini"></option>
-        </datalist>
         <label>
             Runs per test
             <input type="number" name="runs_per_test" value="5" min="1" max="50" style="width: 4rem;">
