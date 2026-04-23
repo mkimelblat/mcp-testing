@@ -1,0 +1,5 @@
+{# Partial: emitted by SSE at the start of each test inside a run. #}
+<div class="test-start">
+    <strong>▶ {{ t.test_id }}</strong>
+    <span class="muted">{{ t.runs }} iteration{{ '' if t.runs == 1 else 's' }}{% if t.mutates %} · mutates{% endif %}</span>
+</div>

@@ -1,0 +1,36 @@
+<tr class="test-row">
+    <td class="col-check">
+        <input type="checkbox" name="test_ids" value="{{ t.id }}" checked>
+    </td>
+    <td class="col-id">
+        <a href="/tests/{{ t.id }}/edit">{{ t.id }}</a>
+    </td>
+    <td class="col-prompt">{{ t.prompt }}</td>
+    <td class="col-tools">
+        {% if t.must_call %}
+        <div class="tool-asserts">
+            <span class="tool-label">must call:</span>
+            {% for tc in t.must_call %}<code>{{ tc }}</code>{% endfor %}
+        </div>
+        {% endif %}
+        {% if t.must_not_call %}
+        <div class="tool-asserts">
+            <span class="tool-label muted">must not:</span>
+            {% for tc in t.must_not_call %}<code class="muted">{{ tc }}</code>{% endfor %}
+        </div>
+        {% endif %}
+        {% if not t.must_call and not t.must_not_call %}
+        <span class="muted">—</span>
+        {% endif %}
+    </td>
+    <td class="col-mutates">
+        {% if t.mutates %}<span class="pill pill-warn">writes</span>{% else %}<span class="pill pill-ok">read</span>{% endif %}
+    </td>
+    <td class="col-actions">
+        <a href="/tests/{{ t.id }}/edit" class="action">edit</a>
+        <form method="post" action="/tests/{{ t.id }}/delete" style="display:inline;"
+              onsubmit="return confirm('Delete test {{ t.id }}?');">
+            <button type="submit" class="action action-danger">delete</button>
+        </form>
+    </td>
+</tr>

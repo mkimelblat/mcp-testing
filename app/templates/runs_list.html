@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Runs · Calendly MCP{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Runs</h1>
+        <p class="subtitle">
+            {{ runs|length }} run{{ '' if runs|length == 1 else 's' }}
+            {% if current_run_id %}&middot; <a href="/runs/{{ current_run_id }}">Run #{{ current_run_id }} is live</a>{% endif %}
+        </p>
+    </div>
+    <div class="header-actions">
+        <a href="/" class="btn btn-secondary">Tests</a>
+    </div>
+</section>
+
+{% if runs %}
+<table class="tests-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Started</th>
+            <th>Finished</th>
+            <th>Status</th>
+            <th>Model</th>
+            <th>Runs/test</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in runs %}
+        <tr>
+            <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
+            <td>{{ r.started_at }}</td>
+            <td>{{ r.finished_at or '—' }}</td>
+            <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
+            <td><code>{{ r.model }}</code></td>
+            <td>{{ r.runs_per_test }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="muted">No runs yet. Select tests on the <a href="/">Tests</a> page and click Run.</p>
+{% endif %}
+{% endblock %}

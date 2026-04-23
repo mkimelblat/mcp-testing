@@ -1,0 +1,37 @@
+{# Partial: one iteration of one test. Rendered both server-side (for persisted
+   results) and per-event for live SSE updates. Context var: `r` = result dict. #}
+<article class="result result-{{ 'pass' if r.passed else 'fail' }}">
+    <header class="result-head">
+        <span class="pill pill-{{ 'ok' if r.passed else 'fail' }}">
+            {{ 'PASS' if r.passed else 'FAIL' }}
+        </span>
+        <strong class="result-test-id">{{ r.test_id }}</strong>
+        <span class="muted">iter {{ r.iteration }}{% if r.total %}/{{ r.total }}{% endif %}</span>
+        <span class="muted result-elapsed">{{ '%.1f'|format(r.elapsed_seconds) }}s</span>
+    </header>
+
+    <div class="result-prompt"><em>{{ r.test_prompt }}</em></div>
+
+    <div class="result-asserts">
+        <div>
+            <span class="pill pill-{{ 'ok' if r.tool_ok else 'fail' }}">tools</span>
+            {% if not r.tool_ok %}<span class="result-reason">{{ r.tool_reason }}</span>{% endif %}
+        </div>
+        <div>
+            <span class="pill pill-{{ 'ok' if r.judge_ok else 'fail' }}">judge</span>
+            <span class="result-reason">{{ r.judge_reason }}</span>
+        </div>
+    </div>
+
+    {% if r.tools_called %}
+    <div class="result-tools">
+        <span class="tool-label">tool trace:</span>
+        {% for tool in r.tools_called %}<code>{{ tool }}</code>{% endfor %}
+    </div>
+    {% endif %}
+
+    <details class="result-response">
+        <summary>Response text</summary>
+        <pre>{{ r.response_text }}</pre>
+    </details>
+</article>

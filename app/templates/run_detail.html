@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Run #{{ run.id }} · Calendly MCP{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Run #{{ run.id }}</h1>
+        <p class="subtitle">
+            <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
+            &middot; model <code>{{ run.model }}</code>
+            &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per test
+            &middot; started {{ run.started_at }}
+            {% if run.finished_at %}&middot; finished {{ run.finished_at }}{% endif %}
+        </p>
+    </div>
+    <div class="header-actions">
+        <a href="/runs" class="btn btn-secondary">All runs</a>
+        <a href="/" class="btn btn-secondary">Tests</a>
+    </div>
+</section>
+
+<div id="run-results"
+     {% if is_live %}
+     hx-ext="sse"
+     sse-connect="/runs/{{ run.id }}/stream"
+     sse-swap="result,test_start"
+     hx-swap="beforeend"
+     {% endif %}>
+    {% for r in results %}
+        {% include "_run_result.html" %}
+    {% endfor %}
+</div>
+
+{% if is_live %}
+<div id="run-footer"
+     hx-ext="sse"
+     sse-connect="/runs/{{ run.id }}/stream"
+     sse-swap="complete"
+     hx-swap="innerHTML">
+    <p class="muted">Running&hellip; results will stream in below as each iteration completes.</p>
+</div>
+
+<script>
+  // When the SSE "complete" event arrives, reload so we get the final status pill
+  // and switch from live to static mode.
+  document.body.addEventListener('htmx:sseMessage', (e) => {
+      if (e.detail.type === 'complete') {
+          setTimeout(() => window.location.reload(), 400);
+      }
+  });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'new' %}New test{% else %}Edit {{ test.id }}{% endif %} · Calendly MCP{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>{% if mode == 'new' %}New test{% else %}Edit test{% endif %}</h1>
+    <div class="header-actions">
+        <a href="/" class="btn btn-secondary">Cancel</a>
+    </div>
+</section>
+
+<form method="post"
+      action="{% if mode == 'new' %}/tests{% else %}/tests/{{ test.id }}{% endif %}"
+      class="test-form">
+    <label>
+        <span>Test ID</span>
+        {% if mode == 'new' %}
+        <input type="text" name="id" required pattern="[a-z0-9_]+"
+               placeholder="lowercase_with_underscores">
+        <small class="muted">Used in URLs and CLI. Cannot change later.</small>
+        {% else %}
+        <input type="text" value="{{ test.id }}" disabled>
+        {% endif %}
+    </label>
+
+    <label>
+        <span>Prompt</span>
+        <textarea name="prompt" rows="3" required>{{ test.prompt if test else '' }}</textarea>
+        <small class="muted">Natural-language user request to send to the model.</small>
+    </label>
+
+    <label>
+        <span>Expectation (for LLM judge)</span>
+        <textarea name="expect" rows="6" required>{{ test.expect if test else '' }}</textarea>
+        <small class="muted">Describe what a good response looks like from the user's point of view.</small>
+    </label>
+
+    <div class="form-row">
+        <label>
+            <span>Must call (tool names)</span>
+            <textarea name="must_call" rows="3"
+                      placeholder="event_types-list_event_type_available_times">{% if test %}{{ test.must_call | join('\n') }}{% endif %}</textarea>
+            <small class="muted">One per line (or comma-separated). All must appear in the tool trace.</small>
+        </label>
+        <label>
+            <span>Must NOT call</span>
+            <textarea name="must_not_call" rows="3"
+                      placeholder="meetings-list_events">{% if test %}{{ test.must_not_call | join('\n') }}{% endif %}</textarea>
+            <small class="muted">None of these may appear in the tool trace.</small>
+        </label>
+    </div>
+
+    <label class="checkbox">
+        <input type="checkbox" name="mutates" value="true" {% if test and test.mutates %}checked{% endif %}>
+        <span>Writes/mutates data (auto-capped at 1 run)</span>
+    </label>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            {% if mode == 'new' %}Create test{% else %}Save changes{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}
