@@ -1,6 +1,6 @@
 # mcp-testing
 
-Local test harness for the Calendly MCP server. Runs natural-language prompts
+Local eval harness for the Calendly MCP server. Runs natural-language prompts
 against `mcp.calendly.com` via either the OpenAI Responses API or the
 Anthropic Messages API — both have native remote-MCP support — scores each
 run on two dimensions (tool-trace correctness + LLM-judge text quality), and
@@ -8,7 +8,7 @@ measures consistency across repeated iterations.
 
 Two interfaces share a single SQLite-backed store:
 
-- **Web UI** — view, add, edit tests; trigger runs; watch results stream in live; browse run history; manage credentials
+- **Web UI** — view, add, edit evals; trigger runs; watch results stream in live; browse run history; manage credentials
 - **CLI** — scripted runs for batch / CI use
 
 ## Requirements
@@ -36,7 +36,7 @@ Then in the browser, click **Settings**:
 1. **Connect Calendly** — runs the OAuth flow end-to-end in the browser, stores the token in `.env`
 2. Paste your **OpenAI** and/or **Anthropic** API key — also saved to `.env`
 
-You're ready to run tests. No manual `.env` editing required.
+You're ready to run evals. No manual `.env` editing required.
 
 > **Note on Calendly token**: `mcp.calendly.com` is a separate service from
 > `api.calendly.com`, and it requires OAuth-issued tokens with `mcp:scheduling:*`
@@ -47,17 +47,17 @@ You're ready to run tests. No manual `.env` editing required.
 
 Visit [http://localhost:8000](http://localhost:8000).
 
-- **Tests** — shows the 8 default workflow tests. Click a test id to edit the
-  prompt, expectation, or tool assertions. Click **+ New test** to add one.
+- **Evals** — shows the 8 default workflow evals. Click an eval id to edit the
+  prompt, expectation, or tool assertions. Click **+ New eval** to add one.
 - Pick a **Model** from the dropdown (OpenAI and Anthropic models are
   grouped). The dropdown is auto-filtered to models your saved API keys can
   actually access — a call to `/v1/models` on each provider runs on startup
-  and after any key save. Check one or more tests, set "runs per test",
+  and after any key save. Check one or more evals, set "runs per eval",
   click **Run selected**. You're redirected to the run detail page where
-  results stream in live via SSE. Mutating tests (e.g. cancel, book) are
+  results stream in live via SSE. Mutating evals (e.g. cancel, book) are
   auto-capped at 1 iteration.
-- **Runs** in the nav shows history — each row lists which tests were
-  included, with a per-test pass/total ratio (green = all passed, orange =
+- **Runs** in the nav shows history — each row lists which evals were
+  included, with a per-eval pass/total ratio (green = all passed, orange =
   partial, red = all failed) alongside the aggregate Results pill. Click
   any run to see its full detail, including which model it was run with.
 - **Settings** manages the three credentials at any time, and shows a
@@ -67,11 +67,11 @@ Visit [http://localhost:8000](http://localhost:8000).
 ## Using the CLI
 
 ```bash
-.venv/bin/python run_tests.py --list                          # list tests
+.venv/bin/python run_tests.py --list                          # list evals
 .venv/bin/python run_tests.py                                 # run all, 5 iterations each
 .venv/bin/python run_tests.py --runs 3                        # 3 iterations each
-.venv/bin/python run_tests.py --readonly                      # skip mutating tests
-.venv/bin/python run_tests.py find_available_slots --runs 5   # one test, 5 iterations
+.venv/bin/python run_tests.py --readonly                      # skip mutating evals
+.venv/bin/python run_tests.py find_available_slots --runs 5   # one eval, 5 iterations
 .venv/bin/python run_tests.py --model claude-sonnet-4-6       # A/B against Claude
 ```
 
@@ -102,9 +102,9 @@ output-shape problem (right tools, bad answer).
 
 ```
 app/
-  main.py              FastAPI routes (tests, runs, settings, OAuth)
+  main.py              FastAPI routes (evals, runs, settings, OAuth)
   runner.py            async run orchestrator + SSE fanout
-  db.py                SQLite schema, test + run CRUD, default seed data
+  db.py                SQLite schema, eval + run CRUD, default seed data
   calendly_oauth.py    shared OAuth 2.1 DCR + PKCE helpers
   templates/           Jinja2 templates (HTMX for live updates)
   static/style.css

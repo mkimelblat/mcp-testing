@@ -8,14 +8,14 @@
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
             &middot; model <code>{{ run.model }}</code>
-            &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per test
+            &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per eval
             &middot; started {{ run.started_at }}
             {% if run.finished_at %}&middot; finished {{ run.finished_at }}{% endif %}
         </p>
     </div>
     <div class="header-actions">
         <a href="/runs" class="btn btn-secondary">All runs</a>
-        <a href="/" class="btn btn-secondary">Tests</a>
+        <a href="/" class="btn btn-secondary">Evals</a>
     </div>
 </section>
 

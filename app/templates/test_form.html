@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == 'new' %}New test{% else %}Edit {{ test.id }}{% endif %} · Calendly MCP{% endblock %}
+{% block title %}{% if mode == 'new' %}New eval{% else %}Edit {{ test.id }}{% endif %} · Calendly MCP{% endblock %}
 
 {% block content %}
 <section class="page-header">
-    <h1>{% if mode == 'new' %}New test{% else %}Edit test{% endif %}</h1>
+    <h1>{% if mode == 'new' %}New eval{% else %}Edit eval{% endif %}</h1>
     <div class="header-actions">
         <a href="/" class="btn btn-secondary">Cancel</a>
     </div>
@@ -13,7 +13,7 @@
       action="{% if mode == 'new' %}/tests{% else %}/tests/{{ test.id }}{% endif %}"
       class="test-form">
     <label>
-        <span>Test ID</span>
+        <span>Eval ID</span>
         {% if mode == 'new' %}
         <input type="text" name="id" required pattern="[a-z0-9_]+"
                placeholder="lowercase_with_underscores">
@@ -57,7 +57,7 @@
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">
-            {% if mode == 'new' %}Create test{% else %}Save changes{% endif %}
+            {% if mode == 'new' %}Create eval{% else %}Save changes{% endif %}
         </button>
     </div>
 </form>

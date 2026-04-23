@@ -8,7 +8,7 @@
         <p class="subtitle">Manage credentials used by this harness. Stored in <code>.env</code>.</p>
     </div>
     <div class="header-actions">
-        <a href="/" class="btn btn-secondary">Back to tests</a>
+        <a href="/" class="btn btn-secondary">Back to evals</a>
     </div>
 </section>
 
@@ -28,9 +28,9 @@
             {% endif %}
         </header>
         <p class="muted">
-            Required for any test — the harness sends this token to
+            Required for any eval — the harness sends this token to
             <code>mcp.calendly.com</code>. Connect via OAuth to mint one tied to
-            your (or a dedicated test) Calendly account.
+            your (or a dedicated eval) Calendly account.
         </p>
         <div class="settings-actions">
             <a href="/auth/calendly/start" class="btn btn-primary">
@@ -55,7 +55,7 @@
             {% endif %}
         </header>
         <p class="muted">
-            Needed for any <code>gpt-*</code> model test. Get a key at
+            Needed for any <code>gpt-*</code> model eval. Get a key at
             <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.
         </p>
         <form method="post" action="/settings/api-key" class="settings-form">
@@ -93,7 +93,7 @@
             {% endif %}
         </header>
         <p class="muted">
-            Needed for any <code>claude-*</code> model test. Get a key at
+            Needed for any <code>claude-*</code> model eval. Get a key at
             <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
         </p>
         <form method="post" action="/settings/api-key" class="settings-form">

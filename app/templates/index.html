@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Tests · Calendly MCP{% endblock %}
+{% block title %}Evals · Calendly MCP{% endblock %}
 
 {% block content %}
 <section class="page-header">
     <div>
-        <h1>Tests</h1>
+        <h1>Evals</h1>
         <p class="subtitle">
-            {{ tests|length }} test{{ '' if tests|length == 1 else 's' }}
+            {{ tests|length }} eval{{ '' if tests|length == 1 else 's' }}
             &middot; MCP <code>{{ mcp_url }}</code>
         </p>
     </div>
     <div class="header-actions">
-        <a href="/tests/new" class="btn btn-secondary">+ New test</a>
+        <a href="/tests/new" class="btn btn-secondary">+ New eval</a>
     </div>
 </section>
 
@@ -47,7 +47,7 @@
             </select>
         </label>
         <label>
-            Runs per test
+            Runs per eval
             <input type="number" name="runs_per_test" value="5" min="1" max="50" style="width: 4rem;">
         </label>
         <button type="submit" class="btn btn-primary"
