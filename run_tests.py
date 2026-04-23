@@ -43,6 +43,7 @@ async def main():
     parser.add_argument("--runs",    type=int, default=5)
     parser.add_argument("--readonly", action="store_true", help="Skip tests that mutate data")
     parser.add_argument("--list",    action="store_true",  help="List test IDs and exit")
+    parser.add_argument("--model",   default=MODEL, help=f"OpenAI model (default: {MODEL})")
     args = parser.parse_args()
 
     db.init_db()
@@ -83,7 +84,7 @@ async def main():
 
     separator("═")
     print(f"  Calendly MCP Workflow Tests")
-    print(f"  Model : {MODEL} (Thinking)")
+    print(f"  Model : {args.model}")
     print(f"  MCP   : {MCP_SERVER_URL}")
     print(f"  {len(selected)} test(s) × up to {args.runs} run(s) each")
     if any(t["mutates"] for t in selected) and args.runs > 1:
@@ -111,6 +112,7 @@ async def main():
             label=test["id"],
             must_call=test.get("must_call"),
             must_not_call=test.get("must_not_call"),
+            model=args.model,
         )
         all_results[test["id"]] = result
 

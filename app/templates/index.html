@@ -44,12 +44,21 @@
 
     <div class="run-bar">
         <label>
+            Model
+            <input type="text" name="model" value="{{ model }}" list="model-options"
+                   style="width: 10rem;">
+        </label>
+        <datalist id="model-options">
+            <option value="gpt-5.1"></option>
+            <option value="gpt-5"></option>
+            <option value="gpt-5-mini"></option>
+            <option value="gpt-4.1"></option>
+            <option value="gpt-4o"></option>
+            <option value="gpt-4o-mini"></option>
+        </datalist>
+        <label>
             Runs per test
             <input type="number" name="runs_per_test" value="5" min="1" max="50" style="width: 4rem;">
-        </label>
-        <label class="muted">
-            <input type="checkbox" name="readonly_only" value="1">
-            Read-only only
         </label>
         <button type="submit" class="btn btn-primary" {% if not env_status.openai or not env_status.calendly %}disabled{% endif %}>
             Run selected

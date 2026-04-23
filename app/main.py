@@ -157,9 +157,10 @@ async def run_create(request: Request) -> RedirectResponse:
     except ValueError:
         runs_per_test = 1
     runs_per_test = max(1, min(runs_per_test, 50))
+    model = (form.get("model") or "").strip() or None
 
     try:
-        run_id = await runner.start_run(test_ids, runs_per_test)
+        run_id = await runner.start_run(test_ids, runs_per_test, model=model)
     except runner.RunInProgressError as e:
         active = int(str(e)) if str(e).isdigit() else 0
         raise HTTPException(

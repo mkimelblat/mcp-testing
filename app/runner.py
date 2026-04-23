@@ -83,7 +83,11 @@ class RunInProgressError(Exception):
     pass
 
 
-async def start_run(test_ids: list[str], runs_per_test: int) -> int:
+async def start_run(
+    test_ids: list[str],
+    runs_per_test: int,
+    model: str | None = None,
+) -> int:
     """
     Create a run record, acquire the lock, and kick off execution in the
     background. Returns the run_id immediately so the caller can redirect.
@@ -93,17 +97,20 @@ async def start_run(test_ids: list[str], runs_per_test: int) -> int:
     if _run_lock.locked():
         raise RunInProgressError(_current_run_id or 0)
 
-    run_id = db.create_run(MODEL, MCP_SERVER_URL, runs_per_test)
-    asyncio.create_task(_execute_run(run_id, test_ids, runs_per_test))
+    effective_model = model or MODEL
+    run_id = db.create_run(effective_model, MCP_SERVER_URL, runs_per_test)
+    asyncio.create_task(_execute_run(run_id, test_ids, runs_per_test, effective_model))
     return run_id
 
 
-async def _execute_run(run_id: int, test_ids: list[str], runs_per_test: int) -> None:
+async def _execute_run(
+    run_id: int, test_ids: list[str], runs_per_test: int, model: str,
+) -> None:
     global _current_run_id
     async with _run_lock:
         _current_run_id = run_id
         try:
-            await _execute_run_inner(run_id, test_ids, runs_per_test)
+            await _execute_run_inner(run_id, test_ids, runs_per_test, model)
             db.mark_run_finished(run_id, "complete")
             await _broadcast(run_id, {"type": "complete", "status": "complete"})
         except Exception as e:
@@ -114,7 +121,9 @@ async def _execute_run(run_id: int, test_ids: list[str], runs_per_test: int) -> 
             _current_run_id = None
 
 
-async def _execute_run_inner(run_id: int, test_ids: list[str], runs_per_test: int) -> None:
+async def _execute_run_inner(
+    run_id: int, test_ids: list[str], runs_per_test: int, model: str,
+) -> None:
     token = os.environ.get("CALENDLY_MCP_TOKEN")
     if not token:
         raise RuntimeError("CALENDLY_MCP_TOKEN not set — run setup_auth.py")
@@ -147,6 +156,7 @@ async def _execute_run_inner(run_id: int, test_ids: list[str], runs_per_test: in
                 label=test_id,
                 must_call=test.get("must_call"),
                 must_not_call=test.get("must_not_call"),
+                model=model,
             )
             iter_result = result["runs"][0]
             db.save_run_result(run_id, test, i + 1, iter_result)

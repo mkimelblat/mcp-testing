@@ -48,14 +48,19 @@ def mcp_tool_config(token: str) -> dict:
     }
 
 
-async def run_once(prompt: str, token: str, client: AsyncOpenAI) -> tuple[str, list[str]]:
+async def run_once(
+    prompt: str,
+    token: str,
+    client: AsyncOpenAI,
+    model: str | None = None,
+) -> tuple[str, list[str]]:
     """
-    Send one prompt to GPT-5.4 with the Calendly MCP attached.
+    Send one prompt to the chosen model with the Calendly MCP attached.
     Returns (response_text, tools_called).
     OpenAI handles the full tool-call loop internally.
     """
     response = await client.responses.create(
-        model=MODEL,
+        model=model or MODEL,
         reasoning={"effort": "medium"},
         tools=[mcp_tool_config(token)],
         input=prompt,
@@ -70,10 +75,15 @@ async def run_once(prompt: str, token: str, client: AsyncOpenAI) -> tuple[str, l
     return response.output_text, tools_called
 
 
-async def judge(response_text: str, criteria: str, client: AsyncOpenAI) -> tuple[bool, str]:
-    """Use GPT-5.4 to evaluate whether the response meets the criteria."""
+async def judge(
+    response_text: str,
+    criteria: str,
+    client: AsyncOpenAI,
+    model: str | None = None,
+) -> tuple[bool, str]:
+    """Use an LLM to evaluate whether the response meets the criteria."""
     result = await client.chat.completions.create(
-        model=MODEL,
+        model=model or MODEL,
         messages=[
             {
                 "role": "system",
@@ -123,6 +133,7 @@ async def run_test(
     label: str = "",
     must_call: list[str] | None = None,
     must_not_call: list[str] | None = None,
+    model: str | None = None,
 ) -> dict:
     """
     Run a test case N times. Each run scored on two dimensions:
@@ -142,9 +153,9 @@ async def run_test(
         text, tools_called     = "", []
 
         try:
-            text, tools_called     = await run_once(prompt, token, client)
+            text, tools_called     = await run_once(prompt, token, client, model=model)
             tool_ok,  tool_reason  = check_tools(tools_called, must_call, must_not_call)
-            judge_ok, judge_reason = await judge(text, expect, client)
+            judge_ok, judge_reason = await judge(text, expect, client, model=model)
         except Exception as e:
             judge_reason = f"Exception: {e}"
 
@@ -182,6 +193,7 @@ async def _cli_main():
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--expect", required=True, help="Plain-English success criterion")
     parser.add_argument("--runs",   type=int, default=5)
+    parser.add_argument("--model",  default=MODEL, help=f"OpenAI model (default: {MODEL})")
     args = parser.parse_args()
 
     for var in ("OPENAI_API_KEY", "CALENDLY_MCP_TOKEN"):
@@ -194,13 +206,15 @@ async def _cli_main():
     token  = os.environ["CALENDLY_MCP_TOKEN"]
     client = make_client()
 
-    print(f"\nModel  : {MODEL} (Thinking)")
+    print(f"\nModel  : {args.model}")
     print(f"MCP    : {MCP_SERVER_URL}")
     print(f"Prompt : {args.prompt}")
     print(f"Expect : {args.expect}")
     print(f"Runs   : {args.runs}\n")
 
-    result = await run_test(args.prompt, args.expect, args.runs, token, client)
+    result = await run_test(
+        args.prompt, args.expect, args.runs, token, client, model=args.model,
+    )
 
     n, total = result["passed"], result["total"]
     print(f"\n  Result: {n}/{total} passed")
