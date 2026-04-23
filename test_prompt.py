@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 """
 Run any prompt against the Calendly hosted MCP (mcp.calendly.com) N times
-using GPT-5.4 (Thinking) via the OpenAI Responses API, and report consistency.
+against a chosen LLM (OpenAI GPT family or Anthropic Claude family), and
+report consistency.
 
-The Responses API handles the full MCP tool-call loop internally —
-no connection management needed here.
+Provider is inferred from the model name:
+  - Starts with "claude" → Anthropic Messages API with native remote MCP
+  - Otherwise            → OpenAI Responses API with native remote MCP
+
+Both providers handle the full MCP tool-call loop internally — no connection
+management needed here.
 
 CLI usage:
   python test_prompt.py \\
     --prompt "Find open slots for my Coffee Chat next week" \\
     --expect "Lists available time slots with timezone" \\
-    --runs 5
+    --runs 5 \\
+    --model gpt-5.1
 
-Import usage (from run_tests.py):
+Import usage (from run_tests.py, app/runner.py):
   from test_prompt import run_once, judge, run_test
 """
 
@@ -32,13 +38,48 @@ MCP_SERVER_URL = "https://mcp.calendly.com"
 MODEL          = "gpt-5.1"
 
 
+# ── Provider detection ────────────────────────────────────────────────────────
+
+def is_anthropic(model: str) -> bool:
+    return model.lower().startswith("claude")
+
+
+# ── Clients ───────────────────────────────────────────────────────────────────
+
 def make_client() -> AsyncOpenAI:
+    """
+    Legacy entry point kept for compatibility. Returns an OpenAI client.
+    Provider-specific clients are constructed on demand in _openai_* / _anthropic_*.
+    """
     return AsyncOpenAI(
         organization=os.environ.get("OPENAI_ORG_ID") or None,
     )
 
 
-def mcp_tool_config(token: str) -> dict:
+_openai_client: AsyncOpenAI | None = None
+_anthropic_client = None  # late import
+
+
+def _get_openai_client() -> AsyncOpenAI:
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = AsyncOpenAI(
+            organization=os.environ.get("OPENAI_ORG_ID") or None,
+        )
+    return _openai_client
+
+
+def _get_anthropic_client():
+    global _anthropic_client
+    if _anthropic_client is None:
+        from anthropic import AsyncAnthropic
+        _anthropic_client = AsyncAnthropic()
+    return _anthropic_client
+
+
+# ── OpenAI path ───────────────────────────────────────────────────────────────
+
+def _openai_mcp_config(token: str) -> dict:
     return {
         "type":             "mcp",
         "server_label":     "calendly",
@@ -48,42 +89,26 @@ def mcp_tool_config(token: str) -> dict:
     }
 
 
-async def run_once(
-    prompt: str,
-    token: str,
-    client: AsyncOpenAI,
-    model: str | None = None,
-) -> tuple[str, list[str]]:
-    """
-    Send one prompt to the chosen model with the Calendly MCP attached.
-    Returns (response_text, tools_called).
-    OpenAI handles the full tool-call loop internally.
-    """
+async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str]]:
+    client = _get_openai_client()
     response = await client.responses.create(
-        model=model or MODEL,
+        model=model,
         reasoning={"effort": "medium"},
-        tools=[mcp_tool_config(token)],
+        tools=[_openai_mcp_config(token)],
         input=prompt,
     )
-
     tools_called = [
         item.name
         for item in response.output
         if getattr(item, "type", None) == "mcp_call"
     ]
-
     return response.output_text, tools_called
 
 
-async def judge(
-    response_text: str,
-    criteria: str,
-    client: AsyncOpenAI,
-    model: str | None = None,
-) -> tuple[bool, str]:
-    """Use an LLM to evaluate whether the response meets the criteria."""
+async def _openai_judge(response_text: str, criteria: str, model: str) -> tuple[bool, str]:
+    client = _get_openai_client()
     result = await client.chat.completions.create(
-        model=model or MODEL,
+        model=model,
         messages=[
             {
                 "role": "system",
@@ -103,37 +128,120 @@ async def judge(
     return data["pass"], data["reason"]
 
 
+# ── Anthropic path ────────────────────────────────────────────────────────────
+
+def _anthropic_mcp_config(token: str) -> dict:
+    return {
+        "type":                "url",
+        "url":                 f"{MCP_SERVER_URL}/mcp",
+        "name":                "calendly",
+        "authorization_token": token,
+    }
+
+
+async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str]]:
+    client = _get_anthropic_client()
+    response = await client.beta.messages.create(
+        model=model,
+        max_tokens=4096,
+        mcp_servers=[_anthropic_mcp_config(token)],
+        messages=[{"role": "user", "content": prompt}],
+        betas=["mcp-client-2025-04-04"],
+    )
+
+    text_parts   = []
+    tools_called = []
+    for block in response.content:
+        btype = getattr(block, "type", None)
+        if btype == "text":
+            text_parts.append(block.text)
+        elif btype == "mcp_tool_use":
+            tools_called.append(block.name)
+
+    return "".join(text_parts), tools_called
+
+
+async def _anthropic_judge(response_text: str, criteria: str, model: str) -> tuple[bool, str]:
+    client = _get_anthropic_client()
+    result = await client.messages.create(
+        model=model,
+        max_tokens=512,
+        system=(
+            "Evaluate whether an AI assistant's response meets a given criterion. "
+            'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
+        ),
+        messages=[
+            {
+                "role": "user",
+                "content": f"Criterion: {criteria}\n\nResponse:\n{response_text}",
+            },
+        ],
+    )
+    raw = "".join(b.text for b in result.content if getattr(b, "type", None) == "text")
+    # Claude sometimes wraps JSON in prose — extract the first {...} block.
+    start = raw.find("{")
+    end   = raw.rfind("}")
+    if start >= 0 and end > start:
+        raw = raw[start:end + 1]
+    data = json.loads(raw)
+    return data["pass"], data["reason"]
+
+
+# ── Unified entry points (provider dispatch) ──────────────────────────────────
+
+async def run_once(
+    prompt: str,
+    token:  str,
+    client = None,  # deprecated; kept so callers that pass it don't break
+    model:  str | None = None,
+) -> tuple[str, list[str]]:
+    m = model or MODEL
+    if is_anthropic(m):
+        return await _anthropic_run_once(prompt, token, m)
+    return await _openai_run_once(prompt, token, m)
+
+
+async def judge(
+    response_text: str,
+    criteria:      str,
+    client = None,  # deprecated
+    model:  str | None = None,
+) -> tuple[bool, str]:
+    m = model or MODEL
+    if is_anthropic(m):
+        return await _anthropic_judge(response_text, criteria, m)
+    return await _openai_judge(response_text, criteria, m)
+
+
+# ── Tool-trace check (provider-agnostic) ──────────────────────────────────────
+
 def check_tools(
-    tools_called: list[str],
-    must_call: list[str] | None,
+    tools_called:  list[str],
+    must_call:     list[str] | None,
     must_not_call: list[str] | None,
 ) -> tuple[bool, str]:
-    """
-    Check tool trace against required / forbidden tools.
-    Returns (passed, reason). reason is empty on pass.
-    """
-    called = set(tools_called)
-    missing   = [t for t in (must_call or [])     if t not in called]
+    called    = set(tools_called)
+    missing   = [t for t in (must_call     or []) if t not in called]
     forbidden = [t for t in (must_not_call or []) if t in called]
 
     problems = []
-    if missing:
-        problems.append(f"missing required: {', '.join(missing)}")
-    if forbidden:
-        problems.append(f"called forbidden: {', '.join(forbidden)}")
+    if missing:   problems.append(f"missing required: {', '.join(missing)}")
+    if forbidden: problems.append(f"called forbidden: {', '.join(forbidden)}")
     return (not problems, "; ".join(problems))
 
 
+# ── Suite runner (N iterations of one test) ───────────────────────────────────
+
 async def run_test(
-    prompt: str,
-    expect: str,
-    runs: int,
-    token: str,
-    client: AsyncOpenAI,
-    label: str = "",
-    must_call: list[str] | None = None,
+    prompt:        str,
+    expect:        str,
+    runs:          int,
+    token:         str,
+    client = None,  # deprecated; ignored
+    label:         str = "",
+    must_call:     list[str] | None = None,
     must_not_call: list[str] | None = None,
-    model: str | None = None,
+    model:         str | None = None,
 ) -> dict:
     """
     Run a test case N times. Each run scored on two dimensions:
@@ -143,6 +251,7 @@ async def run_test(
     """
     results = []
     prefix  = f"  [{label}] " if label else "  "
+    m       = model or MODEL
 
     for i in range(runs):
         print(f"{prefix}Run {i + 1}/{runs} ... ", end="", flush=True)
@@ -153,9 +262,9 @@ async def run_test(
         text, tools_called     = "", []
 
         try:
-            text, tools_called     = await run_once(prompt, token, client, model=model)
+            text, tools_called     = await run_once(prompt, token, model=m)
             tool_ok,  tool_reason  = check_tools(tools_called, must_call, must_not_call)
-            judge_ok, judge_reason = await judge(text, expect, client, model=model)
+            judge_ok, judge_reason = await judge(text, expect, model=m)
         except Exception as e:
             judge_reason = f"Exception: {e}"
 
@@ -188,23 +297,24 @@ async def run_test(
 
 async def _cli_main():
     parser = argparse.ArgumentParser(
-        description="Test a single prompt against the Calendly MCP via GPT-5.4"
+        description="Test a single prompt against the Calendly MCP via a chosen LLM"
     )
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--expect", required=True, help="Plain-English success criterion")
     parser.add_argument("--runs",   type=int, default=5)
-    parser.add_argument("--model",  default=MODEL, help=f"OpenAI model (default: {MODEL})")
+    parser.add_argument("--model",  default=MODEL, help=f"Model name (default: {MODEL})")
     args = parser.parse_args()
 
-    for var in ("OPENAI_API_KEY", "CALENDLY_MCP_TOKEN"):
-        if not os.environ.get(var):
-            print(f"Error: {var} not set.", file=sys.stderr)
-            if var == "CALENDLY_MCP_TOKEN":
-                print("  Run: .venv/bin/python setup_auth.py", file=sys.stderr)
-            sys.exit(1)
+    token = os.environ.get("CALENDLY_MCP_TOKEN")
+    if not token:
+        print("Error: CALENDLY_MCP_TOKEN not set.", file=sys.stderr)
+        print("  Run: .venv/bin/python setup_auth.py", file=sys.stderr)
+        sys.exit(1)
 
-    token  = os.environ["CALENDLY_MCP_TOKEN"]
-    client = make_client()
+    provider_key = "ANTHROPIC_API_KEY" if is_anthropic(args.model) else "OPENAI_API_KEY"
+    if not os.environ.get(provider_key):
+        print(f"Error: {provider_key} not set (required for model '{args.model}').", file=sys.stderr)
+        sys.exit(1)
 
     print(f"\nModel  : {args.model}")
     print(f"MCP    : {MCP_SERVER_URL}")
@@ -213,7 +323,7 @@ async def _cli_main():
     print(f"Runs   : {args.runs}\n")
 
     result = await run_test(
-        args.prompt, args.expect, args.runs, token, client, model=args.model,
+        args.prompt, args.expect, args.runs, token, model=args.model,
     )
 
     n, total = result["passed"], result["total"]

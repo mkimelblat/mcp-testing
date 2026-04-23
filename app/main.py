@@ -2,36 +2,44 @@
 FastAPI app for the Calendly MCP test harness UI.
 
 Routes:
-  GET    /                     — test list
-  GET    /tests/new            — form: create test
-  POST   /tests                — create test
-  GET    /tests/{id}/edit      — form: edit test
-  POST   /tests/{id}           — update test
-  POST   /tests/{id}/delete    — delete test
-  POST   /runs                 — start a new run
-  GET    /runs                 — run history
-  GET    /runs/{id}            — run detail (live or static)
-  GET    /runs/{id}/stream     — SSE event stream for a running run
+  GET    /                         — test list
+  GET    /tests/new                — form: create test
+  POST   /tests                    — create test
+  GET    /tests/{id}/edit          — form: edit test
+  POST   /tests/{id}               — update test
+  POST   /tests/{id}/delete        — delete test
+  POST   /runs                     — start a new run
+  GET    /runs                     — run history
+  GET    /runs/{id}                — run detail (live or static)
+  GET    /runs/{id}/stream         — SSE event stream for a running run
+  GET    /settings                 — manage API keys + Calendly OAuth
+  POST   /settings/api-key         — save an OpenAI or Anthropic key
+  POST   /settings/clear/{name}    — clear a stored credential
+  GET    /auth/calendly/start      — begin Calendly OAuth flow
+  GET    /auth/calendly/callback   — OAuth callback, stores token in .env
 """
 
 from __future__ import annotations
 
 import json
 import os
+import secrets
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key, unset_key
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
-from app import db, runner
+from app import calendly_oauth, db, runner
 from test_prompt import MCP_SERVER_URL, MODEL
 
 load_dotenv()
 
 APP_DIR      = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR     = os.path.dirname(APP_DIR)
+ENV_FILE     = os.path.join(ROOT_DIR, ".env")
 TEMPLATE_DIR = os.path.join(APP_DIR, "templates")
 STATIC_DIR   = os.path.join(APP_DIR, "static")
 
@@ -47,9 +55,34 @@ def _startup() -> None:
 
 def _env_status() -> dict[str, bool]:
     return {
-        "openai":   bool(os.environ.get("OPENAI_API_KEY")),
-        "calendly": bool(os.environ.get("CALENDLY_MCP_TOKEN")),
+        "openai":    bool(os.environ.get("OPENAI_API_KEY")),
+        "anthropic": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "calendly":  bool(os.environ.get("CALENDLY_MCP_TOKEN")),
     }
+
+
+def _set_env(name: str, value: str) -> None:
+    """Persist a credential to .env and update the running process env."""
+    # python-dotenv requires the .env file to exist.
+    if not os.path.exists(ENV_FILE):
+        open(ENV_FILE, "a").close()
+    set_key(ENV_FILE, name, value)
+    os.environ[name] = value
+    _reset_provider_clients()
+
+
+def _clear_env(name: str) -> None:
+    if os.path.exists(ENV_FILE):
+        unset_key(ENV_FILE, name)
+    os.environ.pop(name, None)
+    _reset_provider_clients()
+
+
+def _reset_provider_clients() -> None:
+    """Drop cached LLM clients so they pick up refreshed env vars."""
+    import test_prompt as tp
+    tp._openai_client    = None
+    tp._anthropic_client = None
 
 
 # ── Test list ─────────────────────────────────────────────────────────────────
@@ -220,3 +253,131 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                 yield {"event": "error", "data": event.get("message", "")}
 
     return EventSourceResponse(event_generator())
+
+
+# ── Settings ──────────────────────────────────────────────────────────────────
+
+@app.get("/settings", response_class=HTMLResponse)
+def settings_page(request: Request, error: str = "", ok: str = "") -> HTMLResponse:
+    return templates.TemplateResponse(
+        request, "settings.html",
+        {
+            "env_status": _env_status(),
+            "error":      error,
+            "ok":         ok,
+        },
+    )
+
+
+_VALID_KEY_NAMES = {
+    "OPENAI_API_KEY":    "OpenAI API key",
+    "ANTHROPIC_API_KEY": "Anthropic API key",
+}
+
+
+@app.post("/settings/api-key")
+def settings_save_key(
+    name:  str = Form(...),
+    value: str = Form(...),
+) -> RedirectResponse:
+    if name not in _VALID_KEY_NAMES:
+        raise HTTPException(status_code=400, detail="Unknown credential name")
+    value = value.strip()
+    if not value:
+        return RedirectResponse("/settings?error=Empty+value+ignored", status_code=303)
+    _set_env(name, value)
+    return RedirectResponse(f"/settings?ok={_VALID_KEY_NAMES[name]}+saved", status_code=303)
+
+
+@app.post("/settings/clear/{name}")
+def settings_clear(name: str) -> RedirectResponse:
+    clearable = {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "CALENDLY_MCP_TOKEN", "CALENDLY_MCP_REFRESH_TOKEN"}
+    if name not in clearable:
+        raise HTTPException(status_code=400, detail="Not a clearable credential")
+    _clear_env(name)
+    # Also clear refresh token alongside the main Calendly token.
+    if name == "CALENDLY_MCP_TOKEN":
+        _clear_env("CALENDLY_MCP_REFRESH_TOKEN")
+    return RedirectResponse("/settings?ok=Credential+cleared", status_code=303)
+
+
+# ── Calendly OAuth (web-based flow, callback on this same server) ─────────────
+
+# state → {"verifier": ..., "client_id": ..., "endpoints": {...}}
+_pending_oauth: dict[str, dict] = {}
+
+
+def _oauth_redirect_uri(request: Request) -> str:
+    # Use the request URL base so the redirect URI matches the port the user is
+    # actually on (useful if someone runs uvicorn on a non-default port).
+    base = str(request.base_url).rstrip("/")
+    return f"{base}/auth/calendly/callback"
+
+
+@app.get("/auth/calendly/start")
+def calendly_oauth_start(request: Request) -> RedirectResponse:
+    try:
+        endpoints = calendly_oauth.discover()
+    except Exception as e:
+        return RedirectResponse(
+            f"/settings?error=Calendly+discovery+failed:+{e}", status_code=303,
+        )
+
+    redirect_uri = _oauth_redirect_uri(request)
+    try:
+        client_id = calendly_oauth.register(
+            endpoints["registration_endpoint"], redirect_uri,
+        )
+    except Exception as e:
+        return RedirectResponse(
+            f"/settings?error=Calendly+client+registration+failed:+{e}",
+            status_code=303,
+        )
+
+    verifier, challenge = calendly_oauth.pkce_pair()
+    state = secrets.token_urlsafe(16)
+    _pending_oauth[state] = {
+        "verifier":     verifier,
+        "client_id":    client_id,
+        "endpoints":    endpoints,
+        "redirect_uri": redirect_uri,
+    }
+
+    url = calendly_oauth.authorize_url(
+        endpoints["authorization_endpoint"],
+        client_id, redirect_uri, challenge, state,
+    )
+    return RedirectResponse(url, status_code=303)
+
+
+@app.get("/auth/calendly/callback")
+def calendly_oauth_callback(
+    code:  str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+) -> RedirectResponse:
+    if error:
+        _pending_oauth.pop(state or "", None)
+        return RedirectResponse(f"/settings?error=Calendly+OAuth:+{error}", status_code=303)
+    if not code or not state or state not in _pending_oauth:
+        return RedirectResponse("/settings?error=Invalid+OAuth+state", status_code=303)
+
+    pending = _pending_oauth.pop(state)
+    try:
+        tokens = calendly_oauth.exchange(
+            pending["endpoints"]["token_endpoint"],
+            pending["client_id"],
+            code,
+            pending["verifier"],
+            pending["redirect_uri"],
+        )
+    except Exception as e:
+        return RedirectResponse(
+            f"/settings?error=Calendly+token+exchange+failed:+{e}", status_code=303,
+        )
+
+    _set_env("CALENDLY_MCP_TOKEN", tokens["access_token"])
+    if "refresh_token" in tokens:
+        _set_env("CALENDLY_MCP_REFRESH_TOKEN", tokens["refresh_token"])
+
+    return RedirectResponse("/settings?ok=Calendly+connected", status_code=303)

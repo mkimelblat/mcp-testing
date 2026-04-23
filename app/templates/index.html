@@ -16,10 +16,10 @@
     </div>
 </section>
 
-{% if not env_status.openai or not env_status.calendly %}
+{% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}
 <div class="banner banner-warn">
-    {% if not env_status.openai %}<div>Missing <code>OPENAI_API_KEY</code> in .env</div>{% endif %}
-    {% if not env_status.calendly %}<div>Missing <code>CALENDLY_MCP_TOKEN</code> — run <code>.venv/bin/python setup_auth.py</code></div>{% endif %}
+    {% if not env_status.calendly %}<div>Not connected to Calendly — <a href="/settings">connect in Settings</a></div>{% endif %}
+    {% if not env_status.openai and not env_status.anthropic %}<div>No LLM provider key set (OpenAI or Anthropic) — <a href="/settings">add one in Settings</a></div>{% endif %}
 </div>
 {% endif %}
 
@@ -46,13 +46,21 @@
         <label>
             Model
             <select name="model">
-                {% set model_options = ['gpt-5.4', 'gpt-5.3', 'gpt-5.2', 'gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
-                {% if model not in model_options %}
+                <optgroup label="OpenAI">
+                    {% set openai_models = ['gpt-5.4', 'gpt-5.3', 'gpt-5.2', 'gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini'] %}
+                    {% for m in openai_models %}
+                        <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Anthropic">
+                    {% set anthropic_models = ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'] %}
+                    {% for m in anthropic_models %}
+                        <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% if model not in openai_models and model not in anthropic_models %}
                     <option value="{{ model }}" selected>{{ model }}</option>
                 {% endif %}
-                {% for m in model_options %}
-                    <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
-                {% endfor %}
             </select>
         </label>
         <label>

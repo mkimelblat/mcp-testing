@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Settings · Calendly MCP{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Settings</h1>
+        <p class="subtitle">Manage credentials used by this harness. Stored in <code>.env</code>.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/" class="btn btn-secondary">Back to tests</a>
+    </div>
+</section>
+
+{% if error %}<div class="banner banner-warn">{{ error }}</div>{% endif %}
+{% if ok %}<div class="banner banner-ok">{{ ok }}</div>{% endif %}
+
+<div class="settings-grid">
+
+    {# ─ Calendly ─────────────────────────────────────────────── #}
+    <section class="settings-card">
+        <header class="settings-card-head">
+            <h2>Calendly</h2>
+            {% if env_status.calendly %}
+                <span class="pill pill-ok">Connected</span>
+            {% else %}
+                <span class="pill pill-warn">Not connected</span>
+            {% endif %}
+        </header>
+        <p class="muted">
+            Required for any test — the harness sends this token to
+            <code>mcp.calendly.com</code>. Connect via OAuth to mint one tied to
+            your (or a dedicated test) Calendly account.
+        </p>
+        <div class="settings-actions">
+            <a href="/auth/calendly/start" class="btn btn-primary">
+                {% if env_status.calendly %}Reconnect Calendly{% else %}Connect Calendly{% endif %}
+            </a>
+            {% if env_status.calendly %}
+            <form method="post" action="/settings/clear/CALENDLY_MCP_TOKEN" style="display:inline">
+                <button type="submit" class="btn btn-secondary">Disconnect</button>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+
+    {# ─ OpenAI ───────────────────────────────────────────────── #}
+    <section class="settings-card">
+        <header class="settings-card-head">
+            <h2>OpenAI</h2>
+            {% if env_status.openai %}
+                <span class="pill pill-ok">Set</span>
+            {% else %}
+                <span class="pill pill-warn">Missing</span>
+            {% endif %}
+        </header>
+        <p class="muted">
+            Needed for any <code>gpt-*</code> model test. Get a key at
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.
+        </p>
+        <form method="post" action="/settings/api-key" class="settings-form">
+            <input type="hidden" name="name" value="OPENAI_API_KEY">
+            <input type="password" name="value" placeholder="sk-..." autocomplete="off" required>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        {% if env_status.openai %}
+        <form method="post" action="/settings/clear/OPENAI_API_KEY" class="settings-actions">
+            <button type="submit" class="btn btn-secondary">Clear</button>
+        </form>
+        {% endif %}
+    </section>
+
+    {# ─ Anthropic ───────────────────────────────────────────── #}
+    <section class="settings-card">
+        <header class="settings-card-head">
+            <h2>Anthropic</h2>
+            {% if env_status.anthropic %}
+                <span class="pill pill-ok">Set</span>
+            {% else %}
+                <span class="pill pill-warn">Missing</span>
+            {% endif %}
+        </header>
+        <p class="muted">
+            Needed for any <code>claude-*</code> model test. Get a key at
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+        </p>
+        <form method="post" action="/settings/api-key" class="settings-form">
+            <input type="hidden" name="name" value="ANTHROPIC_API_KEY">
+            <input type="password" name="value" placeholder="sk-ant-..." autocomplete="off" required>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        {% if env_status.anthropic %}
+        <form method="post" action="/settings/clear/ANTHROPIC_API_KEY" class="settings-actions">
+            <button type="submit" class="btn btn-secondary">Clear</button>
+        </form>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}

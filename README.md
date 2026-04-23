@@ -1,20 +1,23 @@
 # mcp-testing
 
 Local test harness for the Calendly MCP server. Runs natural-language prompts
-against `mcp.calendly.com` via the OpenAI Responses API, scores each run on
-two dimensions (tool-trace correctness + LLM-judge text quality), and measures
-consistency across repeated iterations.
+against `mcp.calendly.com` via either the OpenAI Responses API or the
+Anthropic Messages API — both have native remote-MCP support — scores each
+run on two dimensions (tool-trace correctness + LLM-judge text quality), and
+measures consistency across repeated iterations.
 
 Two interfaces share a single SQLite-backed store:
 
-- **Web UI** — view, add, edit tests; trigger runs; watch results stream in live; browse run history
+- **Web UI** — view, add, edit tests; trigger runs; watch results stream in live; browse run history; manage credentials
 - **CLI** — scripted runs for batch / CI use
 
 ## Requirements
 
 - Python 3.12+
-- An OpenAI API key with access to GPT-5.x models (`gpt-5.1` is the default)
 - A Calendly account to authorize against
+- At least one LLM provider key:
+  - OpenAI (for `gpt-5.x`, `gpt-4.1`, `gpt-4o`) — [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+  - Anthropic (for `claude-*`) — [console.anthropic.com](https://console.anthropic.com/settings/keys)
 
 ## Setup
 
@@ -25,27 +28,35 @@ cd mcp-testing
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-cp .env.example .env
-# → open .env, paste your OPENAI_API_KEY
-
-.venv/bin/python setup_auth.py
-# → opens browser, you log into Calendly, token is saved to .env
+.venv/bin/python server.py      # → http://localhost:8000
 ```
+
+Then in the browser, click **Settings**:
+
+1. **Connect Calendly** — runs the OAuth flow end-to-end in the browser, stores the token in `.env`
+2. Paste your **OpenAI** and/or **Anthropic** API key — also saved to `.env`
+
+You're ready to run tests. No manual `.env` editing required.
+
+> **Note on Calendly token**: `mcp.calendly.com` is a separate service from
+> `api.calendly.com`, and it requires OAuth-issued tokens with `mcp:scheduling:*`
+> scopes — Calendly PATs from the developer portal don't work here. That's
+> why Settings has an explicit OAuth button rather than a paste field.
 
 ## Using the web UI
-
-```bash
-.venv/bin/python server.py
-```
 
 Visit [http://localhost:8000](http://localhost:8000).
 
 - **Tests** — shows the 8 default workflow tests. Click a test id to edit the
   prompt, expectation, or tool assertions. Click **+ New test** to add one.
-- Check one or more tests, set "runs per test", click **Run selected**. You're
-  redirected to the run detail page where results stream in live via SSE.
-  Mutating tests (e.g. cancel, book) are auto-capped at 1 iteration.
-- **Runs** in the nav shows history — click any run to see its full detail.
+- Pick a **Model** from the dropdown (OpenAI and Anthropic models are
+  grouped). Check one or more tests, set "runs per test", click **Run
+  selected**. You're redirected to the run detail page where results stream
+  in live via SSE. Mutating tests (e.g. cancel, book) are auto-capped at 1
+  iteration.
+- **Runs** in the nav shows history — click any run to see its full detail,
+  including which model it was run with.
+- **Settings** manages the three credentials at any time.
 
 ## Using the CLI
 
@@ -55,6 +66,14 @@ Visit [http://localhost:8000](http://localhost:8000).
 .venv/bin/python run_tests.py --runs 3                        # 3 iterations each
 .venv/bin/python run_tests.py --readonly                      # skip mutating tests
 .venv/bin/python run_tests.py find_available_slots --runs 5   # one test, 5 iterations
+.venv/bin/python run_tests.py --model claude-sonnet-4-6       # A/B against Claude
+```
+
+If you prefer to run the Calendly OAuth flow from the terminal rather than
+the web UI, `setup_auth.py` does the same thing:
+
+```bash
+.venv/bin/python setup_auth.py
 ```
 
 CLI and web UI share the same SQLite file (`mcp_testing.db`), so edits in
@@ -77,13 +96,14 @@ output-shape problem (right tools, bad answer).
 
 ```
 app/
-  main.py            FastAPI routes
-  runner.py          async run orchestrator + SSE fanout
-  db.py              SQLite schema, test + run CRUD, default seed data
-  templates/         Jinja2 templates (HTMX for live updates)
+  main.py              FastAPI routes (tests, runs, settings, OAuth)
+  runner.py            async run orchestrator + SSE fanout
+  db.py                SQLite schema, test + run CRUD, default seed data
+  calendly_oauth.py    shared OAuth 2.1 DCR + PKCE helpers
+  templates/           Jinja2 templates (HTMX for live updates)
   static/style.css
-test_prompt.py       core runner — MCP client, tool checking, LLM judge
-run_tests.py         CLI entry point
-setup_auth.py        one-time OAuth flow (DCR + PKCE)
-server.py            uvicorn entry point for the web UI
+test_prompt.py         provider-dispatch core — OpenAI Responses or Anthropic Messages
+run_tests.py           CLI entry point
+setup_auth.py          terminal-based Calendly OAuth flow (same logic as web UI)
+server.py              uvicorn entry point for the web UI
 ```

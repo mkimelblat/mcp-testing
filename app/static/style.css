@@ -62,6 +62,7 @@ code {
     font-size: 0.9rem;
 }
 .banner-warn { background: #fff4e0; border: 1px solid #ffd599; }
+.banner-ok   { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
 
 /* ── Tests table ───────────────────────────────────────────────────────── */
 .tests-table {
@@ -191,3 +192,32 @@ code {
 }
 
 #run-footer { margin-top: 1rem; }
+
+/* ── Settings page ──────────────────────────────────────────────────────── */
+.settings-grid {
+    display: grid; grid-template-columns: 1fr; gap: 1rem; max-width: 720px;
+}
+.settings-card {
+    background: white; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 1.25rem;
+}
+.settings-card-head {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin: 0 0 0.5rem;
+}
+.settings-card-head h2 {
+    margin: 0; font-size: 1.1rem; font-weight: 600;
+}
+.settings-card p { margin: 0.25rem 0 0.9rem; }
+.settings-form {
+    display: flex; gap: 0.5rem; align-items: center;
+}
+.settings-form input[type="password"] {
+    flex: 1; padding: 0.5rem 0.7rem; font-family: "SF Mono", Monaco, Menlo, monospace;
+    font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px;
+}
+.settings-form input:focus {
+    outline: none; border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+.settings-actions { margin-top: 0.75rem; }
