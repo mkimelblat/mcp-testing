@@ -257,7 +257,7 @@ textarea:focus {
 
 /* ── Run detail / results ──────────────────────────────────────────────── */
 .run-dashboard {
-    display: grid; grid-template-columns: 1.2fr 2fr 0.7fr;
+    display: grid; grid-template-columns: 1.2fr 2fr 0.7fr 0.7fr;
     gap: 0.85rem; margin-bottom: 1rem;
 }
 .dash-card {

@@ -7,6 +7,9 @@
 {% set n_at_most_once = results|selectattr('at_most_once_ok')|list|length %}
 {% set elapsed_list   = results|map(attribute='elapsed_seconds')|select|list %}
 {% set avg_elapsed    = (elapsed_list|sum / elapsed_list|length) if elapsed_list else 0 %}
+{% set token_list     = results|map(attribute='input_tokens')|select|list %}
+{% set total_input    = token_list|sum %}
+{% set avg_input      = (total_input / token_list|length) if token_list else 0 %}
 {% set pct_pass       = (100 * n_passed // total) if total else 0 %}
 {% set pct_progress   = (100 * total // planned) if planned else 0 %}
 
@@ -37,6 +40,21 @@
         <div class="dash-label">Avg elapsed</div>
         <div class="dash-value">{{ '%.1f'|format(avg_elapsed) }}<span class="dash-value-unit">s</span></div>
         <div class="dash-sub">per iteration</div>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-label">Avg input tokens</div>
+        {% if token_list %}
+        <div class="dash-value" title="{{ avg_input|round|int }} tokens per iteration">{%
+            if avg_input >= 1000 %}{{ '%.1f'|format(avg_input / 1000) }}k{%
+            else %}{{ avg_input|round|int }}{% endif %}</div>
+        <div class="dash-sub" title="{{ total_input }} tokens">{%
+            if total_input >= 1000 %}{{ '%.1f'|format(total_input / 1000) }}k{%
+            else %}{{ total_input }}{% endif %} total</div>
+        {% else %}
+        <div class="dash-value">—</div>
+        <div class="dash-sub">no data</div>
+        {% endif %}
     </div>
 </section>
 
