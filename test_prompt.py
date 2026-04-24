@@ -129,12 +129,16 @@ def _openai_mcp_config(token: str) -> dict:
 
 async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str]]:
     client = _get_openai_client()
-    response = await client.responses.create(
-        model=model,
-        reasoning={"effort": "medium"},
-        tools=[_openai_mcp_config(token)],
-        input=prompt,
-    )
+    # `reasoning` is only valid on reasoning models (o-series, gpt-5). Chat
+    # models like gpt-4o reject it with 400 unsupported_parameter.
+    kwargs: dict = {
+        "model": model,
+        "tools": [_openai_mcp_config(token)],
+        "input": prompt,
+    }
+    if model.startswith(("o1", "o3", "o4", "gpt-5")):
+        kwargs["reasoning"] = {"effort": "medium"}
+    response = await client.responses.create(**kwargs)
     tools_called = [
         item.name
         for item in response.output
