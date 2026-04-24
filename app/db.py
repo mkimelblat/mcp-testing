@@ -198,7 +198,8 @@ CREATE TABLE IF NOT EXISTS runs (
     status         TEXT    NOT NULL,
     model          TEXT    NOT NULL,
     mcp_url        TEXT    NOT NULL,
-    runs_per_test  INTEGER NOT NULL
+    runs_per_test  INTEGER NOT NULL,
+    name           TEXT
 );
 
 CREATE TABLE IF NOT EXISTS run_results (
@@ -238,6 +239,9 @@ _MIGRATIONS: dict[str, list[tuple[str, str]]] = {
     "tests": [
         ("at_most_once", "ALTER TABLE tests ADD COLUMN at_most_once TEXT NOT NULL DEFAULT '[]'"),
         ("max_seconds",  "ALTER TABLE tests ADD COLUMN max_seconds REAL"),
+    ],
+    "runs": [
+        ("name", "ALTER TABLE runs ADD COLUMN name TEXT"),
     ],
     "run_results": [
         ("test_must_call",      "ALTER TABLE run_results ADD COLUMN test_must_call TEXT NOT NULL DEFAULT '[]'"),
@@ -412,6 +416,17 @@ def get_run(run_id: int) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
     return dict(row) if row else None
+
+
+def set_run_name(run_id: int, name: str | None) -> None:
+    """Set or clear a run's display name. Raises ValueError if run_id
+    doesn't exist so callers can translate to 404."""
+    if name is not None:
+        name = name.strip()[:200] or None
+    with connect() as conn:
+        cur = conn.execute("UPDATE runs SET name = ? WHERE id = ?", (name, run_id))
+        if cur.rowcount == 0:
+            raise ValueError(f"run {run_id} not found")
 
 
 def list_runs(limit: int = 50, query: str = "") -> list[dict[str, Any]]:

@@ -1,10 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Run #{{ run.id }} · Calendly MCP{% endblock %}
+{% block title %}Run #{{ run.id }}{% if run.name %} — {{ run.name }}{% endif %} · Calendly MCP{% endblock %}
 
 {% block content %}
 <section class="page-header">
     <div>
-        <h1>Run #{{ run.id }}</h1>
+        <h1 class="run-title">
+            <span data-run-heading>
+                Run #{{ run.id }}{% if run.name %} <span class="run-name">— {{ run.name }}</span>{% endif %}
+            </span>
+            <button type="button" class="run-name-edit" data-rename-toggle>
+                {% if run.name %}Rename{% else %}Name this run{% endif %}
+            </button>
+        </h1>
+        <form method="post" action="/runs/{{ run.id }}/name" class="run-name-form" hidden data-rename-form>
+            <input type="text" name="name" value="{{ run.name or '' }}"
+                   maxlength="200" autocomplete="off" placeholder="e.g. baseline gpt-5.1">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-secondary" data-rename-cancel>Cancel</button>
+        </form>
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
             &middot; model <code>{{ run.model }}</code>
@@ -106,4 +119,28 @@
     });
 </script>
 {% endif %}
+
+<script>
+    (function () {
+        const heading = document.querySelector('[data-run-heading]');
+        const toggle  = document.querySelector('[data-rename-toggle]');
+        const form    = document.querySelector('[data-rename-form]');
+        const cancel  = document.querySelector('[data-rename-cancel]');
+        if (!heading || !toggle || !form || !cancel) return;
+
+        function show() {
+            heading.hidden = true;
+            toggle.hidden = true;
+            form.hidden = false;
+            form.querySelector('input[name="name"]').focus();
+        }
+        function hide() {
+            form.hidden = true;
+            heading.hidden = false;
+            toggle.hidden = false;
+        }
+        toggle.addEventListener('click', show);
+        cancel.addEventListener('click', hide);
+    })();
+</script>
 {% endblock %}

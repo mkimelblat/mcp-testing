@@ -39,7 +39,9 @@
     <tbody>
         {% for r in runs %}
         <tr>
-            <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
+            <td>
+                <a href="/runs/{{ r.id }}">#{{ r.id }}</a>{% if r.name %} <span class="run-name-inline">— {{ r.name }}</span>{% endif %}
+            </td>
             <td><time class="local-time" datetime="{{ r.started_at }}">{{ r.started_at }}</time></td>
             <td>{% if r.finished_at %}<time class="local-time" datetime="{{ r.finished_at }}">{{ r.finished_at }}</time>{% else %}—{% endif %}</td>
             <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>

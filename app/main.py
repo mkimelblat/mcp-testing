@@ -356,6 +356,17 @@ def run_detail(request: Request, run_id: int, q: str = "") -> HTMLResponse:
     )
 
 
+@app.post("/runs/{run_id}/name")
+async def run_rename(run_id: int, request: Request) -> RedirectResponse:
+    form = await request.form()
+    name = (form.get("name") or "").strip() or None
+    try:
+        db.set_run_name(run_id, name)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
+
 @app.get("/runs/{run_id}/stream")
 async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
     run = db.get_run(run_id)
