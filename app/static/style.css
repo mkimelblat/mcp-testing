@@ -102,6 +102,7 @@ code {
 .pill-running  { background: #e3f2fd; color: #1565c0; }
 .pill-complete { background: #e8f5e9; color: #2e7d32; }
 .pill-error    { background: #ffebee; color: #c62828; }
+.pill-neutral  { background: #f0f0f0; color: #555; margin-left: 0.3rem; }
 .action {
     font-size: 0.85rem; color: #666; margin-left: 0.5rem;
     background: none; border: none; padding: 0; cursor: pointer;
@@ -140,9 +141,11 @@ code {
 }
 .test-form small.muted { display: block; margin-top: 0.25rem; font-size: 0.8rem; }
 .test-form .form-row {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem; margin-bottom: 1.25rem;
 }
 .test-form .form-row label { margin-bottom: 0; }
+.test-form .form-row .checkbox { margin-bottom: 0; align-self: center; }
 .test-form .checkbox {
     display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;
 }
@@ -172,6 +175,7 @@ code {
 }
 .result-test-id { font-weight: 600; }
 .result-elapsed { margin-left: auto; font-size: 0.85rem; }
+.result-elapsed-over { color: #c62828; font-weight: 500; }
 
 .result-prompt {
     color: #555; font-size: 0.9rem; margin-bottom: 0.5rem;

@@ -1,5 +1,9 @@
 {# Partial: one iteration of one test. Rendered both server-side (for persisted
-   results) and per-event for live SSE updates. Context var: `r` = result dict. #}
+   results) and per-event for live SSE updates. Context var: `r` = result dict.
+
+   Pills for at_most_once / time render only when the rubric snapshot had an
+   assertion for that dimension — historical rows (no snapshot) stay visually
+   unchanged. #}
 <article class="result result-{{ 'pass' if r.passed else 'fail' }}">
     <header class="result-head">
         <span class="pill pill-{{ 'ok' if r.passed else 'fail' }}">
@@ -7,7 +11,9 @@
         </span>
         <strong class="result-test-id">{{ r.test_id }}</strong>
         <span class="muted">iter {{ r.iteration }}{% if r.total %}/{{ r.total }}{% endif %}</span>
-        <span class="muted result-elapsed">{{ '%.1f'|format(r.elapsed_seconds) }}s</span>
+        <span class="muted result-elapsed{% if r.test_max_seconds and not r.time_ok %} result-elapsed-over{% endif %}">
+            {{ '%.1f'|format(r.elapsed_seconds) }}s{% if r.test_max_seconds %} / {{ r.test_max_seconds }}s{% endif %}
+        </span>
     </header>
 
     <div class="result-prompt"><em>{{ r.test_prompt }}</em></div>
@@ -17,6 +23,18 @@
             <span class="pill pill-{{ 'ok' if r.tool_ok else 'fail' }}">tools</span>
             {% if not r.tool_ok %}<span class="result-reason">{{ r.tool_reason }}</span>{% endif %}
         </div>
+        {% if r.test_at_most_once %}
+        <div>
+            <span class="pill pill-{{ 'ok' if r.at_most_once_ok else 'fail' }}">at most once</span>
+            {% if not r.at_most_once_ok %}<span class="result-reason">{{ r.at_most_once_reason }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if r.test_max_seconds %}
+        <div>
+            <span class="pill pill-{{ 'ok' if r.time_ok else 'fail' }}">time</span>
+            {% if not r.time_ok %}<span class="result-reason">{{ r.time_reason }}</span>{% endif %}
+        </div>
+        {% endif %}
         <div>
             <span class="pill pill-{{ 'ok' if r.judge_ok else 'fail' }}">judge</span>
             <span class="result-reason">{{ r.judge_reason }}</span>

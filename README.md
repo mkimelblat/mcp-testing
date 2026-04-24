@@ -3,8 +3,8 @@
 Local eval harness for the Calendly MCP server. Runs natural-language prompts
 against `mcp.calendly.com` via either the OpenAI Responses API or the
 Anthropic Messages API — both have native remote-MCP support — scores each
-run on two dimensions (tool-trace correctness + LLM-judge text quality), and
-measures consistency across repeated iterations.
+run on four dimensions (tool trace, call-count limits, LLM-judge text
+quality, runtime budget), and measures consistency across repeated iterations.
 
 Two interfaces share a single SQLite-backed store:
 
@@ -87,16 +87,35 @@ either place are visible to the other.
 
 ## How scoring works
 
-Each iteration is scored on two independent checks:
+Each iteration is scored on four independent checks:
 
 1. **Tool trace** — did the model call the tools you listed in `must_call`?
    Did it avoid the ones in `must_not_call`?
-2. **Judge** — a separate LLM reads the user prompt, your expectation, and the
+2. **At-most-once** — no tool in `at_most_once` was called more than once
+   (useful when you want "list once, then act" behavior and see a model
+   redundantly re-list).
+3. **Judge** — a separate LLM reads the user prompt, your expectation, and the
    model's response, and returns pass/fail with a reason.
+4. **Runtime** — elapsed time ≤ `max_seconds` (only enforced if set).
 
-A run passes only if **both** pass. The UI shows each dimension independently
+A run passes only if **all** pass. The UI shows each dimension independently
 so you can tell whether a failure is a grounding problem (wrong tools) or an
-output-shape problem (right tools, bad answer).
+output-shape problem (right tools, bad answer). At-most-once and runtime
+pills only render when the eval has an assertion for that dimension.
+
+**Snapshot semantics.** Each `run_results` row stores a snapshot of the full
+rubric (prompt, expectation, tool assertions, runtime budget) at the moment
+the run executed. Editing an eval later does **not** rewrite what historical
+runs appear to have been scored against — the run detail page shows the
+rubric as it was, not as it is now.
+
+## Parallel runs
+
+Up to 3 runs can execute concurrently (`MAX_CONCURRENT_RUNS` in
+`app/runner.py`). Kick off multiple runs — e.g. to A/B two models side by
+side — and each streams results independently to its own detail page.
+Starting a 4th while 3 are active returns HTTP 429 with the active run
+ids; wait for one to finish.
 
 ## Project layout
 

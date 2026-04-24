@@ -48,12 +48,27 @@
                       placeholder="meetings-list_events">{% if test %}{{ test.must_not_call | join('\n') }}{% endif %}</textarea>
             <small class="muted">None of these may appear in the tool trace.</small>
         </label>
+        <label>
+            <span>At most once</span>
+            <textarea name="at_most_once" rows="3"
+                      placeholder="event_types-list_event_types">{% if test %}{{ test.at_most_once | join('\n') }}{% endif %}</textarea>
+            <small class="muted">None of these may be called more than once. Combine with Must call to require exactly once.</small>
+        </label>
     </div>
 
-    <label class="checkbox">
-        <input type="checkbox" name="mutates" value="true" {% if test and test.mutates %}checked{% endif %}>
-        <span>Writes/mutates data (auto-capped at 1 run)</span>
-    </label>
+    <div class="form-row">
+        <label class="checkbox">
+            <input type="checkbox" name="mutates" value="true" {% if test and test.mutates %}checked{% endif %}>
+            <span>Writes/mutates data (auto-capped at 1 run)</span>
+        </label>
+        <label>
+            <span>Max runtime (s)</span>
+            <input type="number" name="max_seconds" step="0.5" min="0"
+                   placeholder="e.g. 30"
+                   value="{% if test and test.max_seconds is not none %}{{ test.max_seconds }}{% endif %}">
+            <small class="muted">Iteration fails if it takes longer. Leave empty for no budget.</small>
+        </label>
+    </div>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">

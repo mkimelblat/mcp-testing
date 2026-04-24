@@ -7,7 +7,10 @@
         <h1>Runs</h1>
         <p class="subtitle">
             {{ runs|length }} run{{ '' if runs|length == 1 else 's' }}
-            {% if current_run_id %}&middot; <a href="/runs/{{ current_run_id }}">Run #{{ current_run_id }} is live</a>{% endif %}
+            {% if current_run_ids %}
+                &middot; live:
+                {% for rid in current_run_ids %}<a href="/runs/{{ rid }}">#{{ rid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+            {% endif %}
         </p>
     </div>
     <div class="header-actions">

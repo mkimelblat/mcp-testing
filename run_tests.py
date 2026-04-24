@@ -112,6 +112,8 @@ async def main():
             label=test["id"],
             must_call=test.get("must_call"),
             must_not_call=test.get("must_not_call"),
+            at_most_once=test.get("at_most_once"),
+            max_seconds=test.get("max_seconds"),
             model=args.model,
         )
         all_results[test["id"]] = result

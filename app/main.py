@@ -163,6 +163,19 @@ def _parse_tool_list(raw: str) -> list[str]:
     return [i for i in items if i]
 
 
+def _parse_max_seconds(raw: str) -> float | None:
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        v = float(raw)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid max_seconds: '{raw}'")
+    if v < 0:
+        raise HTTPException(status_code=400, detail="max_seconds must be >= 0")
+    return v
+
+
 @app.post("/tests")
 def test_create(
     id:            str  = Form(...),
@@ -170,6 +183,8 @@ def test_create(
     expect:        str  = Form(...),
     must_call:     str  = Form(""),
     must_not_call: str  = Form(""),
+    at_most_once:  str  = Form(""),
+    max_seconds:   str  = Form(""),
     mutates:       bool = Form(False),
 ) -> RedirectResponse:
     if db.get_test(id) is not None:
@@ -180,6 +195,8 @@ def test_create(
         "expect":        expect.strip(),
         "must_call":     _parse_tool_list(must_call),
         "must_not_call": _parse_tool_list(must_not_call),
+        "at_most_once":  _parse_tool_list(at_most_once),
+        "max_seconds":   _parse_max_seconds(max_seconds),
         "mutates":       mutates,
     })
     return RedirectResponse("/", status_code=303)
@@ -203,6 +220,8 @@ def test_update(
     expect:        str  = Form(...),
     must_call:     str  = Form(""),
     must_not_call: str  = Form(""),
+    at_most_once:  str  = Form(""),
+    max_seconds:   str  = Form(""),
     mutates:       bool = Form(False),
 ) -> RedirectResponse:
     if db.get_test(test_id) is None:
@@ -212,6 +231,8 @@ def test_update(
         "expect":        expect.strip(),
         "must_call":     _parse_tool_list(must_call),
         "must_not_call": _parse_tool_list(must_not_call),
+        "at_most_once":  _parse_tool_list(at_most_once),
+        "max_seconds":   _parse_max_seconds(max_seconds),
         "mutates":       mutates,
     })
     return RedirectResponse("/", status_code=303)
@@ -241,10 +262,14 @@ async def run_create(request: Request) -> RedirectResponse:
     try:
         run_id = await runner.start_run(test_ids, runs_per_test, model=model)
     except runner.RunInProgressError as e:
-        active = int(str(e)) if str(e).isdigit() else 0
+        active_ids = e.args[0] if e.args else []
+        pretty = ", ".join(f"#{i}" for i in active_ids) or "unknown"
         raise HTTPException(
-            status_code=409,
-            detail=f"A run is already in progress — see /runs/{active}",
+            status_code=429,
+            detail=(
+                f"At capacity — {runner.MAX_CONCURRENT_RUNS} runs already "
+                f"active ({pretty}). Wait for one to finish."
+            ),
         )
     return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
@@ -253,7 +278,7 @@ async def run_create(request: Request) -> RedirectResponse:
 def runs_list(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "runs_list.html",
-        {"runs": db.list_runs(), "current_run_id": runner.current_run_id()},
+        {"runs": db.list_runs(), "current_run_ids": runner.current_run_ids()},
     )
 
 

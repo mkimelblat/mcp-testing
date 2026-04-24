@@ -35,7 +35,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["event_types-update_event_type"],
         "must_not_call": ["event_types-create_event_type"],
-        "mutates": True,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       True,
     },
     {
         "id":      "update_event_type_availability",
@@ -48,7 +50,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["event_types-update_event_type_availability_schedule"],
         "must_not_call": [],
-        "mutates": True,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       True,
     },
     {
         "id":      "find_available_slots",
@@ -62,7 +66,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["event_types-list_event_type_available_times"],
         "must_not_call": ["meetings-list_events"],
-        "mutates": False,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       False,
     },
     {
         "id":      "get_scheduling_link",
@@ -76,7 +82,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     [],
         "must_not_call": ["scheduling_links-create_single_use_scheduling_link"],
-        "mutates": False,
+        "at_most_once":  [],
+        "max_seconds":   60.0,
+        "mutates":       False,
     },
     {
         "id":      "get_rescheduling_link",
@@ -90,7 +98,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["meetings-list_events", "meetings-list_event_invitees"],
         "must_not_call": ["scheduling_links-create_single_use_scheduling_link"],
-        "mutates": False,
+        "at_most_once":  [],
+        "max_seconds":   60.0,
+        "mutates":       False,
     },
     {
         "id":      "cancel_meeting",
@@ -105,7 +115,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["meetings-list_events"],
         "must_not_call": [],
-        "mutates": True,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       True,
     },
     {
         "id":      "create_single_use_link",
@@ -118,7 +130,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     ["scheduling_links-create_single_use_scheduling_link"],
         "must_not_call": [],
-        "mutates": True,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       True,
     },
     {
         "id":      "book_meeting",
@@ -134,7 +148,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         ),
         "must_call":     [],
         "must_not_call": [],
-        "mutates": True,
+        "at_most_once":  [],
+        "max_seconds":   None,
+        "mutates":       True,
     },
 ]
 
@@ -161,6 +177,8 @@ CREATE TABLE IF NOT EXISTS tests (
     expect        TEXT    NOT NULL,
     must_call     TEXT    NOT NULL,
     must_not_call TEXT    NOT NULL,
+    at_most_once  TEXT    NOT NULL DEFAULT '[]',
+    max_seconds   REAL,
     mutates       INTEGER NOT NULL,
     position      INTEGER NOT NULL,
     created_at    TEXT    NOT NULL,
@@ -178,31 +196,70 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 
 CREATE TABLE IF NOT EXISTS run_results (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id          INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
-    test_id         TEXT    NOT NULL,
-    test_prompt     TEXT    NOT NULL,
-    test_expect     TEXT    NOT NULL,
-    iteration       INTEGER NOT NULL,
-    passed          INTEGER NOT NULL,
-    tool_ok         INTEGER NOT NULL,
-    judge_ok        INTEGER NOT NULL,
-    tool_reason     TEXT    NOT NULL,
-    judge_reason    TEXT    NOT NULL,
-    tools_called    TEXT    NOT NULL,
-    response_text   TEXT    NOT NULL,
-    elapsed_seconds REAL    NOT NULL,
-    created_at      TEXT    NOT NULL
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id              INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    test_id             TEXT    NOT NULL,
+    test_prompt         TEXT    NOT NULL,
+    test_expect         TEXT    NOT NULL,
+    test_must_call      TEXT    NOT NULL DEFAULT '[]',
+    test_must_not_call  TEXT    NOT NULL DEFAULT '[]',
+    test_at_most_once   TEXT    NOT NULL DEFAULT '[]',
+    test_max_seconds    REAL,
+    test_mutates        INTEGER NOT NULL DEFAULT 0,
+    iteration           INTEGER NOT NULL,
+    passed              INTEGER NOT NULL,
+    tool_ok             INTEGER NOT NULL,
+    judge_ok            INTEGER NOT NULL,
+    at_most_once_ok     INTEGER NOT NULL DEFAULT 1,
+    time_ok             INTEGER NOT NULL DEFAULT 1,
+    tool_reason         TEXT    NOT NULL,
+    judge_reason        TEXT    NOT NULL,
+    at_most_once_reason TEXT    NOT NULL DEFAULT '',
+    time_reason         TEXT    NOT NULL DEFAULT '',
+    tools_called        TEXT    NOT NULL,
+    response_text       TEXT    NOT NULL,
+    elapsed_seconds     REAL    NOT NULL,
+    created_at          TEXT    NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_run_results_run_id ON run_results(run_id);
 """
 
 
+# Additive ALTER statements for upgrading pre-existing DBs.
+# SQLite has no "ADD COLUMN IF NOT EXISTS", so we check PRAGMA first.
+_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
+    "tests": [
+        ("at_most_once", "ALTER TABLE tests ADD COLUMN at_most_once TEXT NOT NULL DEFAULT '[]'"),
+        ("max_seconds",  "ALTER TABLE tests ADD COLUMN max_seconds REAL"),
+    ],
+    "run_results": [
+        ("test_must_call",      "ALTER TABLE run_results ADD COLUMN test_must_call TEXT NOT NULL DEFAULT '[]'"),
+        ("test_must_not_call",  "ALTER TABLE run_results ADD COLUMN test_must_not_call TEXT NOT NULL DEFAULT '[]'"),
+        ("test_at_most_once",   "ALTER TABLE run_results ADD COLUMN test_at_most_once TEXT NOT NULL DEFAULT '[]'"),
+        ("test_max_seconds",    "ALTER TABLE run_results ADD COLUMN test_max_seconds REAL"),
+        ("test_mutates",        "ALTER TABLE run_results ADD COLUMN test_mutates INTEGER NOT NULL DEFAULT 0"),
+        ("at_most_once_ok",     "ALTER TABLE run_results ADD COLUMN at_most_once_ok INTEGER NOT NULL DEFAULT 1"),
+        ("time_ok",             "ALTER TABLE run_results ADD COLUMN time_ok INTEGER NOT NULL DEFAULT 1"),
+        ("at_most_once_reason", "ALTER TABLE run_results ADD COLUMN at_most_once_reason TEXT NOT NULL DEFAULT ''"),
+        ("time_reason",         "ALTER TABLE run_results ADD COLUMN time_reason TEXT NOT NULL DEFAULT ''"),
+    ],
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, alters in _MIGRATIONS.items():
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for col, stmt in alters:
+            if col not in existing:
+                conn.execute(stmt)
+
+
 def init_db() -> None:
-    """Create tables if missing; seed `tests` from DEFAULT_TESTS on first boot."""
+    """Create tables if missing; migrate existing DBs; seed on first boot."""
     with connect() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
         (count,) = conn.execute("SELECT COUNT(*) FROM tests").fetchone()
         if count == 0:
             _seed_defaults(conn)
@@ -214,14 +271,17 @@ def _seed_defaults(conn: sqlite3.Connection) -> None:
         (
             t["id"], t["prompt"], t["expect"],
             json.dumps(t["must_call"]), json.dumps(t["must_not_call"]),
+            json.dumps(t.get("at_most_once") or []),
+            t.get("max_seconds"),
             1 if t["mutates"] else 0, i, now, now,
         )
         for i, t in enumerate(DEFAULT_TESTS)
     ]
     conn.executemany(
         """INSERT INTO tests
-           (id, prompt, expect, must_call, must_not_call, mutates, position, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
+            mutates, position, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         rows,
     )
 
@@ -235,6 +295,8 @@ def _row_to_test(row: sqlite3.Row) -> dict[str, Any]:
         "expect":        row["expect"],
         "must_call":     json.loads(row["must_call"]),
         "must_not_call": json.loads(row["must_not_call"]),
+        "at_most_once":  json.loads(row["at_most_once"]),
+        "max_seconds":   row["max_seconds"],
         "mutates":       bool(row["mutates"]),
         "position":      row["position"],
         "created_at":    row["created_at"],
@@ -264,12 +326,15 @@ def create_test(test: dict[str, Any]) -> None:
         ).fetchone()
         conn.execute(
             """INSERT INTO tests
-               (id, prompt, expect, must_call, must_not_call, mutates, position, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
+                mutates, position, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 test["id"], test["prompt"], test["expect"],
                 json.dumps(test.get("must_call") or []),
                 json.dumps(test.get("must_not_call") or []),
+                json.dumps(test.get("at_most_once") or []),
+                test.get("max_seconds"),
                 1 if test.get("mutates") else 0,
                 max_pos + 1, now, now,
             ),
@@ -281,12 +346,14 @@ def update_test(test_id: str, test: dict[str, Any]) -> None:
         conn.execute(
             """UPDATE tests
                SET prompt = ?, expect = ?, must_call = ?, must_not_call = ?,
-                   mutates = ?, updated_at = ?
+                   at_most_once = ?, max_seconds = ?, mutates = ?, updated_at = ?
                WHERE id = ?""",
             (
                 test["prompt"], test["expect"],
                 json.dumps(test.get("must_call") or []),
                 json.dumps(test.get("must_not_call") or []),
+                json.dumps(test.get("at_most_once") or []),
+                test.get("max_seconds"),
                 1 if test.get("mutates") else 0,
                 now_iso(), test_id,
             ),
@@ -370,20 +437,38 @@ def list_runs(limit: int = 50) -> list[dict[str, Any]]:
 
 
 def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: dict[str, Any]) -> None:
-    """Persist one iteration of one test inside a run."""
+    """Persist one iteration of one test inside a run.
+
+    Snapshots the full eval rubric (prompt/expect + all assertions + mutates)
+    so later edits to the `tests` row don't mutate what this run was scored
+    against. The run detail page renders from these columns, never from the
+    live `tests` row.
+    """
     with connect() as conn:
         conn.execute(
             """INSERT INTO run_results
-               (run_id, test_id, test_prompt, test_expect, iteration,
-                passed, tool_ok, judge_ok, tool_reason, judge_reason,
+               (run_id, test_id, test_prompt, test_expect,
+                test_must_call, test_must_not_call, test_at_most_once,
+                test_max_seconds, test_mutates, iteration,
+                passed, tool_ok, judge_ok, at_most_once_ok, time_ok,
+                tool_reason, judge_reason, at_most_once_reason, time_reason,
                 tools_called, response_text, elapsed_seconds, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                run_id, test["id"], test["prompt"], test["expect"], iteration,
+                run_id, test["id"], test["prompt"], test["expect"],
+                json.dumps(test.get("must_call") or []),
+                json.dumps(test.get("must_not_call") or []),
+                json.dumps(test.get("at_most_once") or []),
+                test.get("max_seconds"),
+                1 if test.get("mutates") else 0,
+                iteration,
                 1 if result["passed"] else 0,
                 1 if result["tool_ok"] else 0,
                 1 if result["judge_ok"] else 0,
+                1 if result["at_most_once_ok"] else 0,
+                1 if result["time_ok"] else 0,
                 result["tool_reason"], result["judge_reason"],
+                result["at_most_once_reason"], result["time_reason"],
                 json.dumps(result["tools"]), result["text"],
                 result["elapsed"], now_iso(),
             ),
@@ -399,6 +484,12 @@ def list_run_results(run_id: int) -> list[dict[str, Any]]:
             (run_id,),
         ).fetchall()
     return [
-        {**dict(r), "tools_called": json.loads(r["tools_called"])}
+        {
+            **dict(r),
+            "tools_called":       json.loads(r["tools_called"]),
+            "test_must_call":     json.loads(r["test_must_call"]),
+            "test_must_not_call": json.loads(r["test_must_not_call"]),
+            "test_at_most_once":  json.loads(r["test_at_most_once"]),
+        }
         for r in rows
     ]

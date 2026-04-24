@@ -1,6 +1,6 @@
 <tr class="test-row">
     <td class="col-check">
-        <input type="checkbox" name="test_ids" value="{{ t.id }}" checked>
+        <input type="checkbox" name="test_ids" value="{{ t.id }}">
     </td>
     <td class="col-id">
         <a href="/tests/{{ t.id }}/edit">{{ t.id }}</a>
@@ -19,12 +19,19 @@
             {% for tc in t.must_not_call %}<code class="muted">{{ tc }}</code>{% endfor %}
         </div>
         {% endif %}
-        {% if not t.must_call and not t.must_not_call %}
+        {% if t.at_most_once %}
+        <div class="tool-asserts">
+            <span class="tool-label">at most once:</span>
+            {% for tc in t.at_most_once %}<code>{{ tc }}</code>{% endfor %}
+        </div>
+        {% endif %}
+        {% if not t.must_call and not t.must_not_call and not t.at_most_once %}
         <span class="muted">—</span>
         {% endif %}
     </td>
     <td class="col-mutates">
         {% if t.mutates %}<span class="pill pill-warn">writes</span>{% else %}<span class="pill pill-ok">read</span>{% endif %}
+        {% if t.max_seconds is not none %}<span class="pill pill-neutral">≤{{ t.max_seconds }}s</span>{% endif %}
     </td>
     <td class="col-actions">
         <a href="/tests/{{ t.id }}/edit" class="action">edit</a>
