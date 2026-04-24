@@ -22,7 +22,13 @@ code {
     max-width: 1200px; margin: 0 auto; padding: 0.75rem 1.5rem;
     display: flex; align-items: center; justify-content: space-between;
 }
-.brand { font-weight: 600; font-size: 1.05rem; color: #1a1a1a; }
+.brand {
+    font-weight: 600; font-size: 1.05rem; color: #1a1a1a;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    text-decoration: none;
+}
+.brand:hover { text-decoration: none; }
+.brand-logo { flex: none; display: block; }
 .topbar nav { display: flex; gap: 0.25rem; }
 .topbar nav a {
     color: #333; font-size: 1rem; font-weight: 500;
