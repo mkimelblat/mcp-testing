@@ -283,10 +283,15 @@ async def run_create(request: Request) -> RedirectResponse:
 
 
 @app.get("/runs", response_class=HTMLResponse)
-def runs_list(request: Request) -> HTMLResponse:
+def runs_list(request: Request, q: str = "") -> HTMLResponse:
+    query = q.strip()
     return templates.TemplateResponse(
         request, "runs_list.html",
-        {"runs": db.list_runs(), "current_run_ids": runner.current_run_ids()},
+        {
+            "runs":            db.list_runs(query=query),
+            "current_run_ids": runner.current_run_ids(),
+            "query":           query,
+        },
     )
 
 

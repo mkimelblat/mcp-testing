@@ -414,19 +414,42 @@ def get_run(run_id: int) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
-def list_runs(limit: int = 50) -> list[dict[str, Any]]:
-    """Return runs with aggregate and per-test pass/total breakdowns."""
+def list_runs(limit: int = 50, query: str = "") -> list[dict[str, Any]]:
+    """Return runs with aggregate and per-test pass/total breakdowns.
+
+    When `query` is non-empty, restrict to runs that have at least one
+    run_result whose response_text, tool_reason, judge_reason, or
+    tools_called contains the substring (SQLite LIKE, case-insensitive).
+    """
+    q = query.strip()
+    where_sql  = ""
+    where_args: tuple = ()
+    if q:
+        like = f"%{q}%"
+        where_sql = """
+            WHERE EXISTS (
+                SELECT 1 FROM run_results
+                WHERE run_results.run_id = runs.id
+                  AND (response_text LIKE ?
+                       OR tool_reason LIKE ?
+                       OR judge_reason LIKE ?
+                       OR tools_called LIKE ?)
+            )
+        """
+        where_args = (like, like, like, like)
+
     with connect() as conn:
         rows = conn.execute(
-            """SELECT runs.*,
-                      COUNT(rr.id)                AS results_total,
-                      COALESCE(SUM(rr.passed), 0) AS results_passed
-               FROM runs
-               LEFT JOIN run_results rr ON rr.run_id = runs.id
-               GROUP BY runs.id
-               ORDER BY runs.id DESC
-               LIMIT ?""",
-            (limit,),
+            f"""SELECT runs.*,
+                       COUNT(rr.id)                AS results_total,
+                       COALESCE(SUM(rr.passed), 0) AS results_passed
+                FROM runs
+                LEFT JOIN run_results rr ON rr.run_id = runs.id
+                {where_sql}
+                GROUP BY runs.id
+                ORDER BY runs.id DESC
+                LIMIT ?""",
+            (*where_args, limit),
         ).fetchall()
         runs = [dict(r) for r in rows]
 

@@ -6,7 +6,7 @@
     <div>
         <h1>Runs</h1>
         <p class="subtitle">
-            {{ runs|length }} run{{ '' if runs|length == 1 else 's' }}
+            {{ runs|length }} run{{ '' if runs|length == 1 else 's' }}{% if query %} matching <code>{{ query }}</code>{% endif %}
             {% if current_run_ids %}
                 &middot; live:
                 {% for rid in current_run_ids %}<a href="/runs/{{ rid }}">#{{ rid }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
@@ -14,7 +14,11 @@
         </p>
     </div>
     <div class="header-actions">
-        <a href="/" class="btn btn-secondary">Evals</a>
+        <form method="get" action="/runs" class="runs-search">
+            <input type="search" name="q" value="{{ query }}"
+                   placeholder="search results&hellip;" autofocus>
+            {% if query %}<a href="/runs" class="btn btn-secondary">Clear</a>{% endif %}
+        </form>
     </div>
 </section>
 
@@ -66,6 +70,8 @@
         {% endfor %}
     </tbody>
 </table>
+{% elif query %}
+<p class="muted">No runs match <code>{{ query }}</code>. <a href="/runs">Clear search</a></p>
 {% else %}
 <p class="muted">No runs yet. Select evals on the <a href="/">Evals</a> page and click Run.</p>
 {% endif %}
