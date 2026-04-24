@@ -37,6 +37,14 @@ load_dotenv()
 
 MCP_SERVER_URL = "https://mcp.calendly.com"
 MODEL          = "gpt-5.1"
+# Judge uses a fixed OpenAI model regardless of the main model.
+# Rationale: (1) a separate TPM bucket avoids contention with the main
+# model's bucket (e.g. sonnet-4-6 and gpt-4o both have 30k/min caps that
+# saturate on tool-heavy runs); (2) a fixed judge produces consistent
+# verdicts across different main models, which matters for comparing
+# eval results. gpt-5.1 has a 500k TPM ceiling on this project so it
+# won't contend with gpt-4o main runs either.
+JUDGE_MODEL    = "gpt-5.1"
 
 
 # ── Provider detection ────────────────────────────────────────────────────────
@@ -66,6 +74,8 @@ def _get_openai_client() -> AsyncOpenAI:
     if _openai_client is None:
         _openai_client = AsyncOpenAI(
             organization=os.environ.get("OPENAI_ORG_ID") or None,
+            max_retries=6,
+            timeout=120.0,
         )
     return _openai_client
 
@@ -74,7 +84,10 @@ def _get_anthropic_client():
     global _anthropic_client
     if _anthropic_client is None:
         from anthropic import AsyncAnthropic
-        _anthropic_client = AsyncAnthropic()
+        _anthropic_client = AsyncAnthropic(
+            max_retries=6,
+            timeout=120.0,
+        )
     return _anthropic_client
 
 
@@ -151,15 +164,19 @@ async def _openai_judge(
     response_text: str, criteria: str, tools_called: list[str], model: str,
 ) -> tuple[bool, str]:
     client = _get_openai_client()
-    result = await client.chat.completions.create(
-        model=model,
-        temperature=0,
-        messages=[
+    # Reasoning models (o-series, gpt-5) reject `temperature`. Non-reasoning
+    # chat models need temperature=0 for deterministic verdicts.
+    kwargs: dict = {
+        "model": model,
+        "messages": [
             {"role": "system", "content": _JUDGE_SYSTEM_PROMPT},
             {"role": "user",   "content": _format_judge_user_message(criteria, tools_called, response_text)},
         ],
-        response_format={"type": "json_object"},
-    )
+        "response_format": {"type": "json_object"},
+    }
+    if not model.startswith(("o1", "o3", "o4", "gpt-5")):
+        kwargs["temperature"] = 0
+    result = await client.chat.completions.create(**kwargs)
     data = json.loads(result.choices[0].message.content)
     return data["pass"], data["reason"]
 
@@ -181,11 +198,17 @@ async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str,
         model=model,
         max_tokens=4096,
         mcp_servers=[_anthropic_mcp_config(token)],
-        tools=[{
-            "type":            "mcp_toolset",
-            "mcp_server_name": "calendly",
-            "default_config":  {"enabled": True, "defer_loading": False},
-        }],
+        tools=[
+            {
+                "type":            "mcp_toolset",
+                "mcp_server_name": "calendly",
+                "default_config":  {"enabled": True, "defer_loading": True},
+            },
+            {
+                "type": "tool_search_tool_bm25_20251119",
+                "name": "tool_search_tool_bm25",
+            },
+        ],
         messages=[{"role": "user", "content": prompt}],
         betas=["mcp-client-2025-11-20"],
     )
@@ -200,31 +223,6 @@ async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str,
             tools_called.append(block.name)
 
     return "".join(text_parts), tools_called
-
-
-async def _anthropic_judge(
-    response_text: str, criteria: str, tools_called: list[str], model: str,
-) -> tuple[bool, str]:
-    client = _get_anthropic_client()
-    # Some newer Anthropic models (e.g. claude-opus-4-7) deprecate the
-    # `temperature` parameter entirely. We rely on the sharpened system
-    # prompt + tools_called grounding for stable verdicts instead.
-    result = await client.messages.create(
-        model=model,
-        max_tokens=512,
-        system=_JUDGE_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": _format_judge_user_message(criteria, tools_called, response_text)},
-        ],
-    )
-    raw = "".join(b.text for b in result.content if getattr(b, "type", None) == "text")
-    # Claude sometimes wraps JSON in prose — extract the first {...} block.
-    start = raw.find("{")
-    end   = raw.rfind("}")
-    if start >= 0 and end > start:
-        raw = raw[start:end + 1]
-    data = json.loads(raw)
-    return data["pass"], data["reason"]
 
 
 # ── Unified entry points (provider dispatch) ──────────────────────────────────
@@ -246,13 +244,10 @@ async def judge(
     criteria:      str,
     tools_called:  list[str] | None = None,
     client = None,  # deprecated
-    model:  str | None = None,
+    model:  str | None = None,  # main model (ignored — judge is pinned to JUDGE_MODEL)
 ) -> tuple[bool, str]:
-    m = model or MODEL
     tools = tools_called or []
-    if is_anthropic(m):
-        return await _anthropic_judge(response_text, criteria, tools, m)
-    return await _openai_judge(response_text, criteria, tools, m)
+    return await _openai_judge(response_text, criteria, tools, JUDGE_MODEL)
 
 
 # ── Tool-trace check (provider-agnostic) ──────────────────────────────────────
@@ -328,16 +323,22 @@ async def run_test(
         at_most_once_ok,  at_most_once_reason  = True,  ""
         judge_ok,         judge_reason         = False, ""
         text, tools_called                     = "", []
+        elapsed                                = None
 
         try:
             text, tools_called = await run_once(prompt, token, model=m)
+            # Stop the clock here so `elapsed` measures only the model under
+            # test, not the judge overhead (judge runs on gpt-5.1 which can
+            # add ~1-3s and has nothing to do with the main model's speed).
+            elapsed = time.monotonic() - t0
             tool_ok,         tool_reason         = check_tools(tools_called, must_call, must_not_call)
             at_most_once_ok, at_most_once_reason = check_at_most_once(tools_called, at_most_once)
             judge_ok,        judge_reason        = await judge(text, expect, tools_called=tools_called, model=m)
         except Exception as e:
             judge_reason = f"Exception: {e}"
 
-        elapsed            = time.monotonic() - t0
+        if elapsed is None:
+            elapsed = time.monotonic() - t0
         time_ok, time_reason = check_time(elapsed, max_seconds)
         passed = tool_ok and judge_ok and at_most_once_ok and time_ok
 
