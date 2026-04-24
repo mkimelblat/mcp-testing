@@ -27,7 +27,7 @@ import secrets
 
 from dotenv import load_dotenv, set_key, unset_key
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
@@ -357,14 +357,14 @@ def run_detail(request: Request, run_id: int, q: str = "") -> HTMLResponse:
 
 
 @app.post("/runs/{run_id}/name")
-async def run_rename(run_id: int, request: Request) -> RedirectResponse:
+async def run_rename(run_id: int, request: Request) -> Response:
     form = await request.form()
     name = (form.get("name") or "").strip() or None
     try:
         db.set_run_name(run_id, name)
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
-    return RedirectResponse(f"/runs/{run_id}", status_code=303)
+    return Response(status_code=204)
 
 
 @app.get("/runs/{run_id}/stream")

@@ -5,19 +5,15 @@
 <section class="page-header">
     <div>
         <h1 class="run-title">
-            <span data-run-heading>
-                Run #{{ run.id }}{% if run.name %} <span class="run-name">— {{ run.name }}</span>{% endif %}
-            </span>
-            <button type="button" class="run-name-edit" data-rename-toggle>
-                {% if run.name %}Rename{% else %}Name this run{% endif %}
-            </button>
+            <span class="run-id">Run #{{ run.id }}</span>
+            <input class="run-name-input" type="text"
+                   value="{{ run.name or '' }}"
+                   placeholder="Name this run"
+                   maxlength="200"
+                   autocomplete="off"
+                   aria-label="Run name"
+                   data-rename-url="/runs/{{ run.id }}/name">
         </h1>
-        <form method="post" action="/runs/{{ run.id }}/name" class="run-name-form" hidden data-rename-form>
-            <input type="text" name="name" value="{{ run.name or '' }}"
-                   maxlength="200" autocomplete="off" placeholder="e.g. baseline gpt-5.1">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <button type="button" class="btn btn-secondary" data-rename-cancel>Cancel</button>
-        </form>
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
             &middot; model <code>{{ run.model }}</code>
@@ -122,25 +118,30 @@
 
 <script>
     (function () {
-        const heading = document.querySelector('[data-run-heading]');
-        const toggle  = document.querySelector('[data-rename-toggle]');
-        const form    = document.querySelector('[data-rename-form]');
-        const cancel  = document.querySelector('[data-rename-cancel]');
-        if (!heading || !toggle || !form || !cancel) return;
+        const input = document.querySelector('.run-name-input');
+        if (!input) return;
+        const url = input.dataset.renameUrl;
+        let saved = input.value;
 
-        function show() {
-            heading.hidden = true;
-            toggle.hidden = true;
-            form.hidden = false;
-            form.querySelector('input[name="name"]').focus();
+        async function save() {
+            const value = input.value.trim();
+            if (value === saved) return;
+            const body = new FormData();
+            body.append('name', value);
+            const resp = await fetch(url, { method: 'POST', body });
+            if (!resp.ok) return;
+            saved = value;
+            const idPart = document.querySelector('.run-id').textContent;
+            document.title = value
+                ? `${idPart} — ${value} · Calendly MCP`
+                : `${idPart} · Calendly MCP`;
         }
-        function hide() {
-            form.hidden = true;
-            heading.hidden = false;
-            toggle.hidden = false;
-        }
-        toggle.addEventListener('click', show);
-        cancel.addEventListener('click', hide);
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+            if (e.key === 'Escape') { input.value = saved; input.blur(); }
+        });
+        input.addEventListener('blur', save);
     })();
 </script>
 {% endblock %}
