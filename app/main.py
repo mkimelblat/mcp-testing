@@ -324,20 +324,40 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 
+    # Honor the browser's Last-Event-ID on reconnect so we don't replay
+    # iterations the client already rendered (which would beforeend-append
+    # duplicate groups/articles). run_results.id is our monotonic event id.
+    try:
+        last_id = int(request.headers.get("Last-Event-ID", "0"))
+    except ValueError:
+        last_id = 0
+
     async def event_generator():
-        seen_test_ids: set[str] = set()
+        known_tids:   set[str] = set()   # client already has the group shell
+        emitted_tids: set[str] = set()   # we've emitted test_start this connection
+
         async for event in runner.stream(run_id):
             if await request.is_disconnected():
                 break
             etype = event.get("type", "message")
+
             if etype == "result":
                 r = event["result"]
                 tid = r["test_id"]
-                # Mid-stream subscribers get persisted results replayed without
-                # their original test_start events — synthesize a group shell
-                # the first time we see each test_id so OOB targets exist.
-                if tid not in seen_test_ids:
-                    seen_test_ids.add(tid)
+                rid = r.get("id") or 0
+
+                # Client already has this iteration from before the drop —
+                # remember the tid so we don't re-synth the group, but emit
+                # nothing to the wire.
+                if rid and rid <= last_id:
+                    known_tids.add(tid)
+                    continue
+
+                # Synthesize a group shell only if the client doesn't already
+                # have one. Replayed results reach here without their original
+                # test_start event, so we fabricate one.
+                if tid not in known_tids and tid not in emitted_tids:
+                    emitted_tids.add(tid)
                     shell_html = templates.get_template("_test_start.html").render({
                         "t": {
                             "test_id": tid,
@@ -345,6 +365,9 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                             "mutates": r.get("test_mutates", False),
                         }
                     })
+                    # No `id` on test_start: the SSE spec preserves the prior
+                    # Last-Event-ID when a field is omitted, so the integer id
+                    # from the last `result` event stays live for reconnects.
                     yield {"event": "test_start", "data": shell_html}
 
                 all_results = db.list_run_results(run_id)
@@ -363,13 +386,18 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                 pill_html = templates.get_template("_test_group_pill.html").render(
                     {"test_id": tid, "passed": passed_count, "completed": completed}
                 )
-                yield {"event": "result", "data": article_oob + pill_html}
+                yield {"event": "result", "data": article_oob + pill_html, "id": str(rid)}
+
             elif etype == "test_start":
-                seen_test_ids.add(event["test_id"])
-                html = templates.get_template("_test_start.html").render(
-                    {"t": event}
-                )
+                tid = event["test_id"]
+                # Skip if the client already has this group from a previous
+                # connection, or we've already emitted it this connection.
+                if tid in known_tids or tid in emitted_tids:
+                    continue
+                emitted_tids.add(tid)
+                html = templates.get_template("_test_start.html").render({"t": event})
                 yield {"event": "test_start", "data": html}
+
             elif etype == "summary":
                 results = db.list_run_results(run_id)
                 planned = runner.planned_total(run_id) or len(results)

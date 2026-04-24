@@ -176,11 +176,12 @@ async def _execute_run_inner(
                 model=model,
             )
             iter_result = result["runs"][0]
-            db.save_run_result(run_id, test, i + 1, iter_result)
+            result_id = db.save_run_result(run_id, test, i + 1, iter_result)
 
             await _broadcast(run_id, {
                 "type":      "result",
                 "result": {
+                    "id":                  result_id,
                     "test_id":             test_id,
                     "test_prompt":         test["prompt"],
                     "test_expect":         test["expect"],

@@ -442,8 +442,8 @@ def list_runs(limit: int = 50) -> list[dict[str, Any]]:
     return runs
 
 
-def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: dict[str, Any]) -> None:
-    """Persist one iteration of one test inside a run.
+def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: dict[str, Any]) -> int:
+    """Persist one iteration of one test inside a run. Returns the inserted id.
 
     Snapshots the full eval rubric (prompt/expect + all assertions + mutates)
     so later edits to the `tests` row don't mutate what this run was scored
@@ -451,7 +451,7 @@ def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: d
     live `tests` row.
     """
     with connect() as conn:
-        conn.execute(
+        cur = conn.execute(
             """INSERT INTO run_results
                (run_id, test_id, test_prompt, test_expect,
                 test_must_call, test_must_not_call, test_at_most_once,
@@ -479,6 +479,7 @@ def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: d
                 result["elapsed"], now_iso(),
             ),
         )
+        return cur.lastrowid
 
 
 def list_run_results(run_id: int) -> list[dict[str, Any]]:
