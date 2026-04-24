@@ -15,8 +15,18 @@
             {{ '%.1f'|format(r.elapsed_seconds) }}s{% if r.test_max_seconds %} / {{ r.test_max_seconds }}s{% endif %}
         </span>
         {% if r.input_tokens is not none %}
-        <span class="muted result-tokens" title="{{ r.input_tokens }} input tokens">
-            {% if r.input_tokens >= 1000 %}{{ '%.1f'|format(r.input_tokens / 1000) }}k{% else %}{{ r.input_tokens }}{% endif %} in
+        <span class="result-tokens">
+            <span class="result-tokens-label">in</span>
+            <span class="result-tokens-value" title="{{ r.input_tokens }} input tokens">{%
+                if r.input_tokens >= 1000 %}{{ '%.1f'|format(r.input_tokens / 1000) }}k{%
+                else %}{{ r.input_tokens }}{% endif %}</span>
+            {% if r.output_tokens is not none %}
+            <span class="result-tokens-sep">·</span>
+            <span class="result-tokens-label">out</span>
+            <span class="result-tokens-value" title="{{ r.output_tokens }} output tokens">{%
+                if r.output_tokens >= 1000 %}{{ '%.1f'|format(r.output_tokens / 1000) }}k{%
+                else %}{{ r.output_tokens }}{% endif %}</span>
+            {% endif %}
         </span>
         {% endif %}
     </header>
