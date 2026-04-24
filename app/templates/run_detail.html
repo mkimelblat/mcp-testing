@@ -26,9 +26,15 @@
      sse-swap="result,test_start"
      hx-swap="beforeend"
      {% endif %}>
-    {% for r in results %}
-        {% include "_run_result.html" %}
-    {% endfor %}
+    {# For live runs, leave empty: the SSE stream replays already-persisted
+       results as 'result' events before subscribing to new ones, so
+       server-rendering here would double-render. For completed runs, render
+       statically since no stream will populate them. #}
+    {% if not is_live %}
+        {% for r in results %}
+            {% include "_run_result.html" %}
+        {% endfor %}
+    {% endif %}
 </div>
 
 {% if is_live %}

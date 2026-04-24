@@ -165,7 +165,7 @@ async def _openai_judge(
 def _anthropic_mcp_config(token: str) -> dict:
     return {
         "type":                "url",
-        "url":                 f"{MCP_SERVER_URL}/mcp",
+        "url":                 MCP_SERVER_URL,
         "name":                "calendly",
         "authorization_token": token,
     }
@@ -177,8 +177,13 @@ async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str,
         model=model,
         max_tokens=4096,
         mcp_servers=[_anthropic_mcp_config(token)],
+        tools=[{
+            "type":            "mcp_toolset",
+            "mcp_server_name": "calendly",
+            "default_config":  {"enabled": True, "defer_loading": False},
+        }],
         messages=[{"role": "user", "content": prompt}],
-        betas=["mcp-client-2025-04-04"],
+        betas=["mcp-client-2025-11-20"],
     )
 
     text_parts   = []
@@ -197,10 +202,12 @@ async def _anthropic_judge(
     response_text: str, criteria: str, tools_called: list[str], model: str,
 ) -> tuple[bool, str]:
     client = _get_anthropic_client()
+    # Some newer Anthropic models (e.g. claude-opus-4-7) deprecate the
+    # `temperature` parameter entirely. We rely on the sharpened system
+    # prompt + tools_called grounding for stable verdicts instead.
     result = await client.messages.create(
         model=model,
         max_tokens=512,
-        temperature=0,
         system=_JUDGE_SYSTEM_PROMPT,
         messages=[
             {"role": "user", "content": _format_judge_user_message(criteria, tools_called, response_text)},
