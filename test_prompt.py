@@ -176,7 +176,7 @@ def _openai_mcp_config(token: str) -> dict:
     }
 
 
-async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str]]:
+async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str], dict[str, int]]:
     client = _get_openai_client()
     # `reasoning` is only valid on reasoning models (o-series, gpt-5). Chat
     # models like gpt-4o reject it with 400 unsupported_parameter.
@@ -193,7 +193,12 @@ async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, li
         for item in response.output
         if getattr(item, "type", None) == "mcp_call"
     ]
-    return response.output_text, tools_called
+    usage = getattr(response, "usage", None)
+    token_usage = {
+        "input":  int(getattr(usage, "input_tokens",  0) or 0),
+        "output": int(getattr(usage, "output_tokens", 0) or 0),
+    }
+    return response.output_text, tools_called, token_usage
 
 
 async def _openai_judge(
@@ -228,7 +233,7 @@ def _anthropic_mcp_config(token: str) -> dict:
     }
 
 
-async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str]]:
+async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str, list[str], dict[str, int]]:
     client = _get_anthropic_client()
     response = await client.beta.messages.create(
         model=model,
@@ -258,7 +263,12 @@ async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str,
         elif btype == "mcp_tool_use":
             tools_called.append(block.name)
 
-    return "".join(text_parts), tools_called
+    usage = getattr(response, "usage", None)
+    token_usage = {
+        "input":  int(getattr(usage, "input_tokens",  0) or 0),
+        "output": int(getattr(usage, "output_tokens", 0) or 0),
+    }
+    return "".join(text_parts), tools_called, token_usage
 
 
 # ── Unified entry points (provider dispatch) ──────────────────────────────────
@@ -268,7 +278,7 @@ async def run_once(
     token:  str,
     client = None,  # deprecated; kept so callers that pass it don't break
     model:  str | None = None,
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], dict[str, int]]:
     m = model or MODEL
     if is_anthropic(m):
         return await _anthropic_run_once(prompt, token, m)
@@ -361,10 +371,11 @@ async def run_test(
         at_most_once_ok,  at_most_once_reason  = True,  ""
         judge_ok,         judge_reason         = False, ""
         text, tools_called                     = "", []
+        usage: dict[str, int] | None           = None
         elapsed                                = None
 
         try:
-            text, tools_called = await run_once(prompt, token, model=m)
+            text, tools_called, usage = await run_once(prompt, token, model=m)
             # Wall-clock minus SDK retry backoff — strips rolling-window
             # TPM congestion so successive iterations on capped models
             # (sonnet-4-6, opus-4-7, gpt-4o) are comparable to iter 1.
@@ -393,6 +404,7 @@ async def run_test(
             "tools":               tools_called,
             "text":                text,
             "elapsed":             elapsed,
+            "usage":               usage,
         })
 
         status    = "PASS" if passed else "FAIL"

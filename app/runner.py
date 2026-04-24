@@ -177,6 +177,7 @@ async def _execute_run_inner(
             )
             iter_result = result["runs"][0]
             result_id = db.save_run_result(run_id, test, i + 1, iter_result)
+            usage = iter_result.get("usage") or {}
 
             await _broadcast(run_id, {
                 "type":      "result",
@@ -204,6 +205,8 @@ async def _execute_run_inner(
                     "tools_called":        iter_result["tools"],
                     "response_text":       iter_result["text"],
                     "elapsed_seconds":     iter_result["elapsed"],
+                    "input_tokens":        usage.get("input"),
+                    "output_tokens":       usage.get("output"),
                 },
             })
 

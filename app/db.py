@@ -226,6 +226,8 @@ CREATE TABLE IF NOT EXISTS run_results (
     tools_called        TEXT    NOT NULL,
     response_text       TEXT    NOT NULL,
     elapsed_seconds     REAL    NOT NULL,
+    input_tokens        INTEGER,
+    output_tokens       INTEGER,
     created_at          TEXT    NOT NULL
 );
 
@@ -253,6 +255,8 @@ _MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("time_ok",             "ALTER TABLE run_results ADD COLUMN time_ok INTEGER NOT NULL DEFAULT 1"),
         ("at_most_once_reason", "ALTER TABLE run_results ADD COLUMN at_most_once_reason TEXT NOT NULL DEFAULT ''"),
         ("time_reason",         "ALTER TABLE run_results ADD COLUMN time_reason TEXT NOT NULL DEFAULT ''"),
+        ("input_tokens",        "ALTER TABLE run_results ADD COLUMN input_tokens INTEGER"),
+        ("output_tokens",       "ALTER TABLE run_results ADD COLUMN output_tokens INTEGER"),
     ],
 }
 
@@ -505,6 +509,7 @@ def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: d
     against. The run detail page renders from these columns, never from the
     live `tests` row.
     """
+    usage = result.get("usage") or {}
     with connect() as conn:
         cur = conn.execute(
             """INSERT INTO run_results
@@ -513,8 +518,9 @@ def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: d
                 test_max_seconds, test_mutates, iteration,
                 passed, tool_ok, judge_ok, at_most_once_ok, time_ok,
                 tool_reason, judge_reason, at_most_once_reason, time_reason,
-                tools_called, response_text, elapsed_seconds, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                tools_called, response_text, elapsed_seconds,
+                input_tokens, output_tokens, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, test["id"], test["prompt"], test["expect"],
                 json.dumps(test.get("must_call") or []),
@@ -531,7 +537,9 @@ def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: d
                 result["tool_reason"], result["judge_reason"],
                 result["at_most_once_reason"], result["time_reason"],
                 json.dumps(result["tools"]), result["text"],
-                result["elapsed"], now_iso(),
+                result["elapsed"],
+                usage.get("input"), usage.get("output"),
+                now_iso(),
             ),
         )
         return cur.lastrowid
