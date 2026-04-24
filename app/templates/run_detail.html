@@ -16,17 +16,6 @@
     </div>
 </section>
 
-{% if not is_live and groups %}
-<script>
-    document.querySelectorAll('[data-group-toggle]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const open = btn.dataset.groupToggle === 'open';
-            document.querySelectorAll('details.test-group').forEach(d => { d.open = open; });
-        });
-    });
-</script>
-{% endif %}
-
 {# Single SSE connection shared by all three panes. Three sse-connect
    elements would open three EventSources; each auto-reconnects on close,
    and each reconnect replays from the server, duplicating the groups. #}
@@ -102,4 +91,15 @@
     </script>
     {% endif %}
 </div>
+
+{% if not is_live and groups %}
+<script>
+    document.querySelectorAll('[data-group-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const open = btn.dataset.groupToggle === 'open';
+            document.querySelectorAll('details.test-group').forEach(d => { d.open = open; });
+        });
+    });
+</script>
+{% endif %}
 {% endblock %}
