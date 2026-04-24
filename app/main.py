@@ -373,7 +373,16 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                 )
                 yield {"event": "summary", "data": html}
             elif etype == "complete":
-                yield {"event": "complete", "data": event.get("status", "")}
+                status = event.get("status", "")
+                # OOB-swap the header status pill so it flips from "running"
+                # to its final state in place. Remaining payload is empty, so
+                # the #run-footer (sse-swap="complete", hx-swap="innerHTML")
+                # just clears its "Running..." message.
+                pill_oob = (
+                    f'<span id="run-status" hx-swap-oob="true" '
+                    f'class="pill pill-{status}">{status}</span>'
+                )
+                yield {"event": "complete", "data": pill_oob}
             elif etype == "error":
                 yield {"event": "error", "data": event.get("message", "")}
 

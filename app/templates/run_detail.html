@@ -68,14 +68,5 @@
     <p class="muted">Running&hellip; results will stream in below as each iteration completes.</p>
 </div>
 
-<script>
-  // When the SSE "complete" event arrives, reload so we get the final status pill
-  // and switch from live to static mode.
-  document.body.addEventListener('htmx:sseMessage', (e) => {
-      if (e.detail.type === 'complete') {
-          setTimeout(() => window.location.reload(), 400);
-      }
-  });
-</script>
 {% endif %}
 {% endblock %}

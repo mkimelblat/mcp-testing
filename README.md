@@ -31,7 +31,7 @@ python3.12 -m venv .venv
 .venv/bin/python server.py      # → http://localhost:8000
 ```
 
-Then in the browser, click **Settings**:
+Then open [http://localhost:8000](http://localhost:8000) in the browser and click **Settings**:
 
 1. **Connect Calendly** — runs the OAuth flow end-to-end in the browser, stores the token in `.env`
 2. Paste your **OpenAI** and/or **Anthropic** API key — also saved to `.env`
