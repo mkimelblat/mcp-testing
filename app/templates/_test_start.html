@@ -1,4 +1,5 @@
-<details class="test-group" id="test-group-{{ t.test_id }}">
+<details class="test-group" id="test-group-{{ t.test_id }}"
+         {% if eval_groups_open() %}open{% endif %}>
     <summary class="test-group-header">
         <code class="test-group-id">{{ t.test_id }}</code>
         {% set test_id = t.test_id %}

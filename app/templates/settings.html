@@ -5,7 +5,7 @@
 <section class="page-header">
     <div>
         <h1>Settings</h1>
-        <p class="subtitle">Manage credentials used by this harness. Stored in <code>.env</code>.</p>
+        <p class="subtitle">Manage credentials and display preferences. Stored in <code>.env</code>.</p>
     </div>
     <div class="header-actions">
         <a href="/" class="btn btn-secondary">Back to evals</a>
@@ -118,6 +118,24 @@
             </p>
         {% endif %}
         {% endif %}
+    </section>
+
+    {# ─ Run detail display preference ────────────────────────── #}
+    <section class="settings-card">
+        <header class="settings-card-head">
+            <h2>Run detail</h2>
+        </header>
+        <p class="muted">
+            Default state for eval groups on the run detail page.
+        </p>
+        <form method="post" action="/settings/eval-groups-default-open" class="settings-form">
+            <label for="eval-groups-default">Eval groups</label>
+            <select id="eval-groups-default" name="default_state">
+                <option value="collapsed" {% if not eval_groups_open() %}selected{% endif %}>Collapsed</option>
+                <option value="expanded"  {% if eval_groups_open()     %}selected{% endif %}>Expanded</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
     </section>
 
 </div>

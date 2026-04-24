@@ -47,6 +47,11 @@ app       = FastAPI(title="Calendly MCP Test Harness")
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# Display preference read from .env. Callable so toggling the setting takes
+# effect on the next render without restarting uvicorn.
+templates.env.globals["eval_groups_open"] = \
+    lambda: os.environ.get("EVAL_GROUPS_DEFAULT_OPEN", "").lower() == "true"
+
 
 @app.on_event("startup")
 def _startup() -> None:
@@ -434,6 +439,17 @@ def settings_clear(name: str) -> RedirectResponse:
     if name == "CALENDLY_MCP_TOKEN":
         _clear_env("CALENDLY_MCP_REFRESH_TOKEN")
     return RedirectResponse("/settings?ok=Credential+cleared", status_code=303)
+
+
+@app.post("/settings/eval-groups-default-open")
+def settings_eval_groups_default_open(
+    default_state: str = Form(...),
+) -> RedirectResponse:
+    if default_state not in ("expanded", "collapsed"):
+        raise HTTPException(status_code=400, detail="Invalid value")
+    _set_env("EVAL_GROUPS_DEFAULT_OPEN",
+             "true" if default_state == "expanded" else "false")
+    return RedirectResponse("/settings?ok=Preference+saved", status_code=303)
 
 
 # ── Calendly OAuth (web-based flow, callback on this same server) ─────────────
