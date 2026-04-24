@@ -52,6 +52,15 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates.env.globals["eval_groups_open"] = \
     lambda: os.environ.get("EVAL_GROUPS_DEFAULT_OPEN", "").lower() == "true"
 
+# Cache-bust /static/style.css with the file's mtime so template soft
+# refreshes pick up CSS edits without requiring a hard reload.
+def _style_version() -> str:
+    try:
+        return str(int(os.path.getmtime(os.path.join(STATIC_DIR, "style.css"))))
+    except OSError:
+        return "0"
+templates.env.globals["style_version"] = _style_version
+
 
 @app.on_event("startup")
 def _startup() -> None:
