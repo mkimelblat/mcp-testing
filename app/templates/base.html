@@ -12,10 +12,11 @@
     <header class="topbar">
         <div class="topbar-inner">
             <a href="/" class="brand">Calendly MCP Evals</a>
+            {% set path = request.url.path %}
             <nav>
-                <a href="/">Evals</a>
-                <a href="/runs">Runs</a>
-                <a href="/settings">Settings</a>
+                <a href="/"         {% if path == '/' %}aria-current="page"{% endif %}>Evals</a>
+                <a href="/runs"     {% if path.startswith('/runs') %}aria-current="page"{% endif %}>Runs</a>
+                <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>Settings</a>
             </nav>
         </div>
     </header>

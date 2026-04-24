@@ -22,9 +22,16 @@ code {
     max-width: 1200px; margin: 0 auto; padding: 0.75rem 1.5rem;
     display: flex; align-items: center; justify-content: space-between;
 }
-.brand { font-weight: 600; font-size: 1rem; color: #1a1a1a; }
+.brand { font-weight: 600; font-size: 1.05rem; color: #1a1a1a; }
+.topbar nav { display: flex; gap: 0.25rem; }
 .topbar nav a {
-    margin-left: 1.25rem; color: #555; font-size: 0.9rem;
+    color: #333; font-size: 1rem; font-weight: 500;
+    padding: 0.4rem 0.75rem; border-radius: 6px;
+    text-decoration: none;
+}
+.topbar nav a:hover { background: #f2f2f2; color: #1a1a1a; }
+.topbar nav a[aria-current="page"] {
+    background: #eef2ff; color: #1a1a1a;
 }
 
 /* ── Layout ────────────────────────────────────────────────────────────── */
