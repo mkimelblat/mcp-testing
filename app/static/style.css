@@ -122,6 +122,34 @@ code {
 .run-bar button { margin-left: auto; }
 
 /* ── Forms ─────────────────────────────────────────────────────────────── */
+/* Base form controls — keep inputs/selects/textareas visually consistent
+   everywhere. Scoped rules (.test-form, .settings-form, .run-bar) can still
+   override width/padding for layout. */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+input[type="search"],
+select,
+textarea {
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: white;
+    color: inherit;
+    line-height: 1.2;
+}
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+.run-bar input[type="number"] { width: 4.5rem; }
+
 .test-form {
     background: white; border: 1px solid #e5e5e5; border-radius: 6px;
     padding: 1.5rem; max-width: 850px;

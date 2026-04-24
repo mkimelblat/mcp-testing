@@ -48,7 +48,7 @@
         </label>
         <label>
             Runs per eval
-            <input type="number" name="runs_per_test" value="5" min="1" max="50" style="width: 4rem;">
+            <input type="number" name="runs_per_test" value="5" min="1" max="50">
         </label>
         <button type="submit" class="btn btn-primary"
                 {% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}disabled{% endif %}>
