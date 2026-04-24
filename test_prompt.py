@@ -82,18 +82,37 @@ def _get_anthropic_client():
 
 _JUDGE_SYSTEM_PROMPT = (
     "Evaluate whether an AI assistant's response meets a given criterion.\n\n"
-    "A response is GROUNDED if the facts it states could plausibly come from "
-    "tools the assistant has access to — this explicitly includes summarized "
-    "or pattern forms (e.g. \"every 30 minutes from 9:00 to 4:30\", ranges, "
-    "counts, aggregates). Summarizing real tool output in a compact pattern "
-    "is grounded, not fabricated.\n\n"
-    "A response is FABRICATED only when it asserts specific facts that could "
-    "not have come from any tool (invented names, prices, IDs, or made-up "
-    "data when the relevant tool was never called).\n\n"
-    "Judge pass/fail strictly against the stated criterion. Do not penalize "
-    "the response for things the criterion does not ask about.\n\n"
+    "You will be given:\n"
+    "  - The criterion (what the response must satisfy).\n"
+    "  - The list of tools the assistant called while producing the "
+    "response (tool names only, not outputs).\n"
+    "  - The response text.\n\n"
+    "A response is GROUNDED if the facts it states are plausibly "
+    "consistent with the tools that were called — this explicitly "
+    "includes summarized or pattern forms (e.g. \"every 30 minutes from "
+    "9:00 to 4:30\", ranges, counts, aggregates). Specific facts (dates, "
+    "times, URLs, IDs, names) in the response should be treated as "
+    "grounded if a listed tool is the kind that would return that type "
+    "of data (e.g. `list_events` returning event dates/URIs, "
+    "`list_event_invitees` returning attendee names). You do not see "
+    "the raw tool output — trust that tools called returned real data.\n\n"
+    "A response is FABRICATED when it asserts specific facts and no "
+    "listed tool could plausibly have produced them — either the tools "
+    "list is empty, or the tools called are unrelated to the facts "
+    "claimed.\n\n"
+    "Judge pass/fail strictly against the stated criterion. Do not "
+    "penalize the response for things the criterion does not ask about.\n\n"
     'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
 )
+
+
+def _format_judge_user_message(criteria: str, tools_called: list[str], response_text: str) -> str:
+    tools_str = ", ".join(tools_called) if tools_called else "(none)"
+    return (
+        f"Criterion: {criteria}\n\n"
+        f"Tools called: {tools_str}\n\n"
+        f"Response:\n{response_text}"
+    )
 
 
 # ── OpenAI path ───────────────────────────────────────────────────────────────
@@ -124,17 +143,16 @@ async def _openai_run_once(prompt: str, token: str, model: str) -> tuple[str, li
     return response.output_text, tools_called
 
 
-async def _openai_judge(response_text: str, criteria: str, model: str) -> tuple[bool, str]:
+async def _openai_judge(
+    response_text: str, criteria: str, tools_called: list[str], model: str,
+) -> tuple[bool, str]:
     client = _get_openai_client()
     result = await client.chat.completions.create(
         model=model,
         temperature=0,
         messages=[
             {"role": "system", "content": _JUDGE_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"Criterion: {criteria}\n\nResponse:\n{response_text}",
-            },
+            {"role": "user",   "content": _format_judge_user_message(criteria, tools_called, response_text)},
         ],
         response_format={"type": "json_object"},
     )
@@ -175,7 +193,9 @@ async def _anthropic_run_once(prompt: str, token: str, model: str) -> tuple[str,
     return "".join(text_parts), tools_called
 
 
-async def _anthropic_judge(response_text: str, criteria: str, model: str) -> tuple[bool, str]:
+async def _anthropic_judge(
+    response_text: str, criteria: str, tools_called: list[str], model: str,
+) -> tuple[bool, str]:
     client = _get_anthropic_client()
     result = await client.messages.create(
         model=model,
@@ -183,10 +203,7 @@ async def _anthropic_judge(response_text: str, criteria: str, model: str) -> tup
         temperature=0,
         system=_JUDGE_SYSTEM_PROMPT,
         messages=[
-            {
-                "role": "user",
-                "content": f"Criterion: {criteria}\n\nResponse:\n{response_text}",
-            },
+            {"role": "user", "content": _format_judge_user_message(criteria, tools_called, response_text)},
         ],
     )
     raw = "".join(b.text for b in result.content if getattr(b, "type", None) == "text")
@@ -216,13 +233,15 @@ async def run_once(
 async def judge(
     response_text: str,
     criteria:      str,
+    tools_called:  list[str] | None = None,
     client = None,  # deprecated
     model:  str | None = None,
 ) -> tuple[bool, str]:
     m = model or MODEL
+    tools = tools_called or []
     if is_anthropic(m):
-        return await _anthropic_judge(response_text, criteria, m)
-    return await _openai_judge(response_text, criteria, m)
+        return await _anthropic_judge(response_text, criteria, tools, m)
+    return await _openai_judge(response_text, criteria, tools, m)
 
 
 # ── Tool-trace check (provider-agnostic) ──────────────────────────────────────
@@ -303,7 +322,7 @@ async def run_test(
             text, tools_called = await run_once(prompt, token, model=m)
             tool_ok,         tool_reason         = check_tools(tools_called, must_call, must_not_call)
             at_most_once_ok, at_most_once_reason = check_at_most_once(tools_called, at_most_once)
-            judge_ok,        judge_reason        = await judge(text, expect, model=m)
+            judge_ok,        judge_reason        = await judge(text, expect, tools_called=tools_called, model=m)
         except Exception as e:
             judge_reason = f"Exception: {e}"
 
