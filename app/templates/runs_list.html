@@ -71,7 +71,11 @@
     </tbody>
 </table>
 {% elif query %}
-<p class="muted">No runs match <code>{{ query }}</code>. <a href="/runs">Clear search</a></p>
+<div class="empty-state">
+    <p class="empty-state-title">No runs match <code>{{ query }}</code></p>
+    <p class="empty-state-hint">Search looks inside each iteration's response text, tool reasons, judge verdicts, and tool calls.</p>
+    <a href="/runs" class="btn btn-secondary">Clear search</a>
+</div>
 {% else %}
 <p class="muted">No runs yet. Select evals on the <a href="/">Evals</a> page and click Run.</p>
 {% endif %}

@@ -68,7 +68,11 @@
                     </details>
                 {% endfor %}
             {% elif query %}
-                <p class="muted">No iterations match <code>{{ query }}</code>. <a href="/runs/{{ run.id }}">Clear search</a></p>
+                <div class="empty-state">
+                    <p class="empty-state-title">No iterations match <code>{{ query }}</code></p>
+                    <p class="empty-state-hint">Search looks inside response text, tool reasons, judge verdicts, and tool calls.</p>
+                    <a href="/runs/{{ run.id }}" class="btn btn-secondary">Clear search</a>
+                </div>
             {% endif %}
         {% endif %}
     </div>

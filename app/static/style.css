@@ -54,6 +54,14 @@ code {
     padding: 0.4rem 0.75rem; border-radius: 6px;
 }
 .group-toggle-btn:hover { background: #e5e5e5; }
+
+.empty-state {
+    text-align: center; padding: 3rem 1.5rem;
+    border: 1px dashed #ddd; border-radius: 8px;
+    background: #fafafa; margin: 1.5rem 0;
+}
+.empty-state-title { margin: 0 0 0.5rem; color: #1a1a1a; font-size: 1rem; font-weight: 500; }
+.empty-state-hint  { margin: 0 0 1.25rem; color: #777; font-size: 0.9rem; }
 .results-toolbar {
     display: flex; align-items: center;
     gap: 1rem; margin: 1rem 0;
