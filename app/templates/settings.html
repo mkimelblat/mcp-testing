@@ -29,10 +29,16 @@
             <code>mcp.calendly.com</code>. Connect via OAuth to mint one tied to
             your (or a dedicated eval) Calendly account.
         </p>
-        {% set user_uuid = calendly_user_uuid() %}
-        {% if user_uuid %}
+        {% set user = calendly_user() %}
+        {% if user %}
         <p class="settings-auth-as">
-            Authenticated as <code>{{ user_uuid }}</code>
+            Authenticated as
+            {% if user.name %}
+                <strong>{{ user.name }}</strong>
+                {% if user.email %}&middot; <code>{{ user.email }}</code>{% endif %}
+            {% else %}
+                <code>{{ user.uuid }}</code>
+            {% endif %}
         </p>
         {% endif %}
         <div class="settings-actions">

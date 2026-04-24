@@ -21,10 +21,15 @@
                 <a href="/"         {% if path == '/' %}aria-current="page"{% endif %}>Evals</a>
                 <a href="/runs"     {% if path.startswith('/runs') %}aria-current="page"{% endif %}>Runs</a>
                 <a href="/settings" {% if path.startswith('/settings') %}aria-current="page"{% endif %}>Settings</a>
-                {% set user_uuid = calendly_user_uuid() %}
-                {% if user_uuid %}
-                <a href="/settings" class="nav-user" title="Authenticated as {{ user_uuid }}">
-                    <code>{{ user_uuid[:8] }}…</code>
+                {% set user = calendly_user() %}
+                {% if user %}
+                <a href="/settings" class="nav-user"
+                   title="Authenticated as {{ user.name or user.uuid }}{% if user.email %} ({{ user.email }}){% endif %}">
+                    {% if user.name %}
+                        {{ user.name }}
+                    {% else %}
+                        <code>{{ user.uuid[:8] }}…</code>
+                    {% endif %}
                 </a>
                 {% endif %}
             </nav>
