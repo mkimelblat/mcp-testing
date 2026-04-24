@@ -36,13 +36,10 @@
            render statically since no stream will populate them. #}
         {% if not is_live %}
             {% for test_id, iters in groups %}
-                {% set passed = iters|selectattr('passed')|list|length %}
-                {% set completed = iters|length %}
                 <details class="test-group" id="test-group-{{ test_id }}"
                          {% if eval_groups_open() %}open{% endif %}>
                     <summary class="test-group-header">
                         <code class="test-group-id">{{ test_id }}</code>
-                        {% include "_test_group_pill.html" %}
                     </summary>
                     <div class="test-group-body" id="test-group-body-{{ test_id }}">
                         {% for r in iters %}

@@ -370,11 +370,6 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                     # from the last `result` event stays live for reconnects.
                     yield {"event": "test_start", "data": shell_html}
 
-                all_results = db.list_run_results(run_id)
-                test_results = [x for x in all_results if x["test_id"] == tid]
-                passed_count = sum(1 for x in test_results if x.get("passed"))
-                completed    = len(test_results)
-
                 article_html = templates.get_template("_run_result.html").render({"r": r})
                 # Wrap in a div with hx-swap-oob. htmx unwraps the tagged
                 # element and inserts its children into the target — so the
@@ -383,10 +378,7 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
                     f'<div hx-swap-oob="beforeend:#test-group-body-{tid}">'
                     f"{article_html}</div>"
                 )
-                pill_html = templates.get_template("_test_group_pill.html").render(
-                    {"test_id": tid, "passed": passed_count, "completed": completed}
-                )
-                yield {"event": "result", "data": article_oob + pill_html, "id": str(rid)}
+                yield {"event": "result", "data": article_oob, "id": str(rid)}
 
             elif etype == "test_start":
                 tid = event["test_id"]
