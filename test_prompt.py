@@ -78,6 +78,24 @@ def _get_anthropic_client():
     return _anthropic_client
 
 
+# ── Judge prompt (shared across providers) ────────────────────────────────────
+
+_JUDGE_SYSTEM_PROMPT = (
+    "Evaluate whether an AI assistant's response meets a given criterion.\n\n"
+    "A response is GROUNDED if the facts it states could plausibly come from "
+    "tools the assistant has access to — this explicitly includes summarized "
+    "or pattern forms (e.g. \"every 30 minutes from 9:00 to 4:30\", ranges, "
+    "counts, aggregates). Summarizing real tool output in a compact pattern "
+    "is grounded, not fabricated.\n\n"
+    "A response is FABRICATED only when it asserts specific facts that could "
+    "not have come from any tool (invented names, prices, IDs, or made-up "
+    "data when the relevant tool was never called).\n\n"
+    "Judge pass/fail strictly against the stated criterion. Do not penalize "
+    "the response for things the criterion does not ask about.\n\n"
+    'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
+)
+
+
 # ── OpenAI path ───────────────────────────────────────────────────────────────
 
 def _openai_mcp_config(token: str) -> dict:
@@ -110,14 +128,9 @@ async def _openai_judge(response_text: str, criteria: str, model: str) -> tuple[
     client = _get_openai_client()
     result = await client.chat.completions.create(
         model=model,
+        temperature=0,
         messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Evaluate whether an AI assistant's response meets a given criterion. "
-                    'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
-                ),
-            },
+            {"role": "system", "content": _JUDGE_SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": f"Criterion: {criteria}\n\nResponse:\n{response_text}",
@@ -167,10 +180,8 @@ async def _anthropic_judge(response_text: str, criteria: str, model: str) -> tup
     result = await client.messages.create(
         model=model,
         max_tokens=512,
-        system=(
-            "Evaluate whether an AI assistant's response meets a given criterion. "
-            'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
-        ),
+        temperature=0,
+        system=_JUDGE_SYSTEM_PROMPT,
         messages=[
             {
                 "role": "user",
