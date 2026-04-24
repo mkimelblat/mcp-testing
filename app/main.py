@@ -21,9 +21,12 @@ Routes:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import secrets
+import time
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv, set_key, unset_key
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -145,6 +148,81 @@ def _reset_provider_clients() -> None:
     import test_prompt as tp
     tp._openai_client    = None
     tp._anthropic_client = None
+
+
+# ── Calendly token lifecycle ──────────────────────────────────────────────────
+
+def _store_calendly_tokens(
+    tokens:         dict,
+    client_id:      str | None = None,
+    token_endpoint: str | None = None,
+) -> None:
+    """Persist an access-token response. `client_id` and `token_endpoint` are
+    only passed on the initial OAuth exchange — they're also needed for later
+    refresh calls, so we keep them in .env alongside the token."""
+    _set_env("CALENDLY_MCP_TOKEN", tokens["access_token"])
+    if "refresh_token" in tokens:
+        _set_env("CALENDLY_MCP_REFRESH_TOKEN", tokens["refresh_token"])
+    if "expires_in" in tokens:
+        _set_env(
+            "CALENDLY_MCP_TOKEN_EXPIRES_AT",
+            str(int(time.time()) + int(tokens["expires_in"])),
+        )
+    if client_id:
+        _set_env("CALENDLY_MCP_CLIENT_ID", client_id)
+    if token_endpoint:
+        _set_env("CALENDLY_MCP_TOKEN_ENDPOINT", token_endpoint)
+
+
+def _ensure_calendly_auth() -> str | None:
+    """Preflight the Calendly access token before starting a run. Returns
+    `None` when the token is valid (refreshing it silently if it's near
+    expiry), or a human-readable error string when the caller should redirect
+    the user to /settings to reconnect."""
+    token = os.environ.get("CALENDLY_MCP_TOKEN")
+    if not token:
+        return "Calendly not connected — connect on Settings"
+
+    expires_at = os.environ.get("CALENDLY_MCP_TOKEN_EXPIRES_AT")
+    if not expires_at:
+        # Legacy token with no expiry info; let the run try it. If it 401s,
+        # the user will hit the same "expired" flow after reconnecting once.
+        return None
+    try:
+        expires_at_ts = int(expires_at)
+    except ValueError:
+        return None
+
+    # 5-min buffer so a refresh mid-run doesn't race with token expiry.
+    if time.time() < expires_at_ts - 300:
+        return None
+
+    refresh_tok    = os.environ.get("CALENDLY_MCP_REFRESH_TOKEN")
+    client_id      = os.environ.get("CALENDLY_MCP_CLIENT_ID")
+    token_endpoint = os.environ.get("CALENDLY_MCP_TOKEN_ENDPOINT")
+    if not (refresh_tok and client_id and token_endpoint):
+        return "Calendly session expired — reconnect on Settings"
+
+    try:
+        new_tokens = calendly_oauth.refresh(token_endpoint, client_id, refresh_tok)
+    except Exception:
+        return "Calendly session expired — reconnect on Settings"
+
+    _store_calendly_tokens(new_tokens)
+    return None
+
+
+def _clear_calendly_session() -> None:
+    """Clear every env var tied to a Calendly token. Called from the
+    Disconnect button and any other teardown."""
+    for name in (
+        "CALENDLY_MCP_TOKEN",
+        "CALENDLY_MCP_REFRESH_TOKEN",
+        "CALENDLY_MCP_TOKEN_EXPIRES_AT",
+        "CALENDLY_MCP_CLIENT_ID",
+        "CALENDLY_MCP_TOKEN_ENDPOINT",
+    ):
+        _clear_env(name)
 
 
 # ── Test list ─────────────────────────────────────────────────────────────────
@@ -275,6 +353,12 @@ async def run_create(request: Request) -> RedirectResponse:
         runs_per_test = 1
     runs_per_test = max(1, min(runs_per_test, 50))
     model = (form.get("model") or "").strip() or None
+
+    auth_err = await asyncio.to_thread(_ensure_calendly_auth)
+    if auth_err:
+        return RedirectResponse(
+            f"/settings?error={quote_plus(auth_err)}", status_code=303,
+        )
 
     try:
         run_id = await runner.start_run(test_ids, runs_per_test, model=model)
@@ -503,10 +587,10 @@ def settings_clear(name: str) -> RedirectResponse:
     clearable = {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "CALENDLY_MCP_TOKEN", "CALENDLY_MCP_REFRESH_TOKEN"}
     if name not in clearable:
         raise HTTPException(status_code=400, detail="Not a clearable credential")
-    _clear_env(name)
-    # Also clear refresh token alongside the main Calendly token.
     if name == "CALENDLY_MCP_TOKEN":
-        _clear_env("CALENDLY_MCP_REFRESH_TOKEN")
+        _clear_calendly_session()
+    else:
+        _clear_env(name)
     return RedirectResponse("/settings?ok=Credential+cleared", status_code=303)
 
 
@@ -597,8 +681,9 @@ def calendly_oauth_callback(
             f"/settings?error=Calendly+token+exchange+failed:+{e}", status_code=303,
         )
 
-    _set_env("CALENDLY_MCP_TOKEN", tokens["access_token"])
-    if "refresh_token" in tokens:
-        _set_env("CALENDLY_MCP_REFRESH_TOKEN", tokens["refresh_token"])
-
+    _store_calendly_tokens(
+        tokens,
+        client_id=pending["client_id"],
+        token_endpoint=pending["endpoints"]["token_endpoint"],
+    )
     return RedirectResponse("/settings?ok=Calendly+connected", status_code=303)

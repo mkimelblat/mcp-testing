@@ -109,6 +109,22 @@ def exchange(
     return r.json()
 
 
+def refresh(token_endpoint: str, client_id: str, refresh_token: str) -> dict:
+    """Exchange a refresh token for a fresh access token (and possibly a
+    rotated refresh token)."""
+    r = httpx.post(
+        token_endpoint,
+        data={
+            "grant_type":    "refresh_token",
+            "client_id":     client_id,
+            "refresh_token": refresh_token,
+        },
+        timeout=10,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
 # ── URL helper ────────────────────────────────────────────────────────────────
 
 def authorize_url(
