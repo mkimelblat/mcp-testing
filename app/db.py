@@ -391,6 +391,23 @@ def mark_run_finished(run_id: int, status: str = "complete") -> None:
         )
 
 
+def mark_abandoned_runs() -> int:
+    """Mark any run still flagged `running` as `error`. Returns the count.
+
+    In-memory runner state (active tasks, queues) is lost on process restart
+    — uvicorn `--reload`, crashes, redeploys — but the DB row stays
+    `running`. Call this at startup: whatever the DB says is `running` at
+    boot is by definition orphaned, because the runner that would advance
+    it no longer exists.
+    """
+    with connect() as conn:
+        cur = conn.execute(
+            "UPDATE runs SET status = 'error', finished_at = ? WHERE status = 'running'",
+            (now_iso(),),
+        )
+        return cur.rowcount
+
+
 def get_run(run_id: int) -> dict[str, Any] | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()

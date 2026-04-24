@@ -56,6 +56,9 @@ templates.env.globals["eval_groups_open"] = \
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
+    n = db.mark_abandoned_runs()
+    if n:
+        print(f"[startup] marked {n} orphaned run(s) as error")
     _refresh_available_models()
 
 
