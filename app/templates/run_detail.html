@@ -14,21 +14,6 @@
             {% if query %}&middot; {{ results|length }} iteration{{ '' if results|length == 1 else 's' }} matching <code>{{ query }}</code>{% endif %}
         </p>
     </div>
-    {% if not is_live %}
-    <div class="header-actions">
-        {% if groups %}
-        <div class="group-toggle">
-            <button type="button" class="btn btn-secondary" data-group-toggle="open">Expand all</button>
-            <button type="button" class="btn btn-secondary" data-group-toggle="close">Collapse all</button>
-        </div>
-        {% endif %}
-        <form method="get" action="/runs/{{ run.id }}" class="runs-search">
-            <input type="search" name="q" value="{{ query }}"
-                   placeholder="search iterations&hellip;">
-            {% if query %}<a href="/runs/{{ run.id }}" class="btn btn-secondary">Clear</a>{% endif %}
-        </form>
-    </div>
-    {% endif %}
 </section>
 
 {% if not is_live and groups %}
@@ -50,6 +35,22 @@
          {% if is_live %}sse-swap="summary" hx-swap="innerHTML"{% endif %}>
         {% include "_run_summary.html" %}
     </div>
+
+    {% if not is_live %}
+    <div class="results-toolbar">
+        {% if groups %}
+        <div class="group-toggle">
+            <button type="button" class="btn btn-secondary" data-group-toggle="open">Expand all</button>
+            <button type="button" class="btn btn-secondary" data-group-toggle="close">Collapse all</button>
+        </div>
+        {% endif %}
+        <form method="get" action="/runs/{{ run.id }}" class="runs-search">
+            <input type="search" name="q" value="{{ query }}"
+                   placeholder="search iterations&hellip;">
+            {% if query %}<a href="/runs/{{ run.id }}" class="btn btn-secondary">Clear</a>{% endif %}
+        </form>
+    </div>
+    {% endif %}
 
     <div id="run-results"
          {% if is_live %}sse-swap="result,test_start" hx-swap="beforeend"{% endif %}>
