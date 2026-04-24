@@ -140,7 +140,7 @@ def _set_env(name: str, value: str) -> None:
     if name in _PROVIDER_FOR_KEY:
         _refresh_available_models(_PROVIDER_FOR_KEY[name])
     if name == "CALENDLY_API_KEY":
-        _me_cache.clear()
+        _user_lookup_cache.clear()
 
 
 def _clear_env(name: str) -> None:
@@ -151,7 +151,7 @@ def _clear_env(name: str) -> None:
     if name in _PROVIDER_FOR_KEY:
         _refresh_available_models(_PROVIDER_FOR_KEY[name])
     if name == "CALENDLY_API_KEY":
-        _me_cache.clear()
+        _user_lookup_cache.clear()
 
 
 def _reset_provider_clients() -> None:
@@ -242,21 +242,23 @@ def _current_calendly_user_uuid() -> str | None:
     return uuid if isinstance(uuid, str) else None
 
 
-# Cache for /users/me responses, keyed by API key value. Cleared when the
-# API key is updated or cleared, so a rotated key re-fetches on next render.
-_me_cache: dict[str, dict] = {}
+# Cache for /users/{uuid} lookups. Keyed by (api_key, uuid) so rotating
+# either the PAT or reconnecting to a different Calendly account triggers
+# a fresh fetch.
+_user_lookup_cache: dict[tuple[str, str], dict] = {}
 
 
-def _fetch_calendly_me(api_key: str) -> dict | None:
-    """Fetch the Calendly user tied to CALENDLY_API_KEY. Cached in-process
-    by api-key value. Returns {"uri","name","email","slug","scheduling_url"}
-    or None on any failure (unauthorized, network, etc)."""
-    if api_key in _me_cache:
-        return _me_cache[api_key]
+def _fetch_calendly_user_by_uuid(api_key: str, uuid: str) -> dict | None:
+    """Resolve an MCP JWT user_uuid to name/email via Calendly's REST API.
+    The PAT must have scope to view the user (typically same org or self).
+    Returns None on any failure — callers fall back to showing just the uuid."""
+    cache_key = (api_key, uuid)
+    if cache_key in _user_lookup_cache:
+        return _user_lookup_cache[cache_key]
     import httpx
     try:
         r = httpx.get(
-            "https://api.calendly.com/users/me",
+            f"https://api.calendly.com/users/{uuid}",
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=5,
         )
@@ -272,7 +274,7 @@ def _fetch_calendly_me(api_key: str) -> dict | None:
         "slug":            resource.get("slug"),
         "scheduling_url":  resource.get("scheduling_url"),
     }
-    _me_cache[api_key] = info
+    _user_lookup_cache[cache_key] = info
     return info
 
 
@@ -280,16 +282,16 @@ def _current_calendly_user() -> dict | None:
     """Return display info for the currently authenticated Calendly user.
     Always includes {"uuid": ...} when an MCP token is set; additionally
     includes {"name","email","slug","scheduling_url"} when CALENDLY_API_KEY
-    is set and /users/me succeeds."""
+    is set and the UUID can be resolved via /users/{uuid}."""
     uuid = _current_calendly_user_uuid()
     if not uuid:
         return None
     info: dict = {"uuid": uuid}
     api_key = os.environ.get("CALENDLY_API_KEY")
     if api_key:
-        me = _fetch_calendly_me(api_key)
-        if me:
-            info.update(me)
+        resolved = _fetch_calendly_user_by_uuid(api_key, uuid)
+        if resolved:
+            info.update(resolved)
     return info
 
 
