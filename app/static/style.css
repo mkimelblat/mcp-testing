@@ -141,6 +141,21 @@ textarea {
     color: inherit;
     line-height: 1.2;
 }
+
+/* Custom caret for <select>. The native caret sits at the far right of
+   the select's width, which leaves a large gap when the selected option
+   is narrower than the widest one. appearance:none + a background SVG
+   gives us a caret whose position we control. */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='%23666'><path d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 10px 6px;
+    padding-right: 1.75rem;
+}
 input:focus,
 select:focus,
 textarea:focus {
@@ -149,6 +164,7 @@ textarea:focus {
     box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
 }
 .run-bar input[type="number"] { width: 4.5rem; }
+.run-bar select { width: 12rem; text-overflow: ellipsis; }
 
 .test-form {
     background: white; border: 1px solid #e5e5e5; border-radius: 6px;
