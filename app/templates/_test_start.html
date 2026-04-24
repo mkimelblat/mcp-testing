@@ -1,5 +1,11 @@
-{# Partial: emitted by SSE at the start of each test inside a run. #}
-<div class="test-start">
-    <strong>▶ {{ t.test_id }}</strong>
-    <span class="muted">{{ t.runs }} iteration{{ '' if t.runs == 1 else 's' }}{% if t.mutates %} · mutates{% endif %}</span>
-</div>
+<details class="test-group" id="test-group-{{ t.test_id }}">
+    <summary class="test-group-header">
+        <code class="test-group-id">{{ t.test_id }}</code>
+        {% set test_id = t.test_id %}
+        {% set passed = 0 %}
+        {% set completed = 0 %}
+        {% include "_test_group_pill.html" %}
+    </summary>
+    <div class="test-group-body" id="test-group-body-{{ t.test_id }}">
+    </div>
+</details>

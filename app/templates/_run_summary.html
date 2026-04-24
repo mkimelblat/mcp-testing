@@ -1,0 +1,51 @@
+{% set total          = results|length %}
+{% set planned        = planned_total %}
+{% set n_passed       = results|selectattr('passed')|list|length %}
+{% set n_tools        = results|selectattr('tool_ok')|list|length %}
+{% set n_judge        = results|selectattr('judge_ok')|list|length %}
+{% set n_time         = results|selectattr('time_ok')|list|length %}
+{% set n_at_most_once = results|selectattr('at_most_once_ok')|list|length %}
+{% set elapsed_list   = results|map(attribute='elapsed_seconds')|select|list %}
+{% set avg_elapsed    = (elapsed_list|sum / elapsed_list|length) if elapsed_list else 0 %}
+{% set pct_pass       = (100 * n_passed // total) if total else 0 %}
+{% set pct_progress   = (100 * total // planned) if planned else 0 %}
+
+<section class="run-dashboard">
+    <div class="dash-card dash-card-result">
+        <div class="dash-label">Result</div>
+        <div class="dash-value">{{ n_passed }}/{{ total }} <span class="dash-value-sub">passed</span></div>
+        <div class="dash-sub">{{ pct_pass }}%</div>
+        {% set pass_status = 'running' if total == 0 else ('ok' if n_passed == total else ('warn' if n_passed * 4 >= total * 3 else 'fail')) %}
+        <div class="progress-bar"><div class="progress-bar-fill progress-bar-fill-{{ pass_status }}" style="width: {{ pct_pass }}%"></div></div>
+    </div>
+
+    <div class="dash-card dash-card-dims">
+        <div class="dash-label">By dimension</div>
+        <div class="dim-chips">
+            {% for name, n in [('tools', n_tools), ('judge', n_judge), ('time', n_time), ('at-most-once', n_at_most_once)] %}
+            {% set status = 'neutral' if total == 0 else ('ok' if n == total else ('warn' if n * 4 >= total * 3 else 'fail')) %}
+            <span class="dim-chip dim-chip-{{ status }}">
+                <span class="dim-dot"></span>
+                <span class="dim-name">{{ name }}</span>
+                <span class="dim-ratio">{{ n }}/{{ total }}</span>
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-label">Avg elapsed</div>
+        <div class="dash-value">{{ '%.1f'|format(avg_elapsed) }}<span class="dash-value-unit">s</span></div>
+        <div class="dash-sub">per iteration</div>
+    </div>
+</section>
+
+{% if planned and planned != total %}
+<div class="run-progress">
+    <div class="run-progress-top">
+        <span class="dash-label">Progress</span>
+        <span class="run-progress-count">{{ total }} / {{ planned }}</span>
+    </div>
+    <div class="progress-bar"><div class="progress-bar-fill progress-bar-fill-running" style="width: {{ pct_progress }}%"></div></div>
+</div>
+{% endif %}

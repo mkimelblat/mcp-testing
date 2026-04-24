@@ -282,17 +282,33 @@ def runs_list(request: Request) -> HTMLResponse:
     )
 
 
+def _group_by_test(results: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Group results by test_id preserving first-appearance order."""
+    groups: dict[str, list[dict]] = {}
+    order: list[str] = []
+    for r in results:
+        tid = r["test_id"]
+        if tid not in groups:
+            groups[tid] = []
+            order.append(tid)
+        groups[tid].append(r)
+    return [(tid, groups[tid]) for tid in order]
+
+
 @app.get("/runs/{run_id}", response_class=HTMLResponse)
 def run_detail(request: Request, run_id: int) -> HTMLResponse:
     run = db.get_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    results = db.list_run_results(run_id)
     return templates.TemplateResponse(
         request, "run_detail.html",
         {
-            "run":     run,
-            "results": db.list_run_results(run_id),
-            "is_live": run["status"] == "running",
+            "run":           run,
+            "results":       results,
+            "groups":        _group_by_test(results),
+            "is_live":       run["status"] == "running",
+            "planned_total": runner.planned_total(run_id) or len(results),
         },
     )
 
@@ -304,20 +320,58 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 
     async def event_generator():
+        seen_test_ids: set[str] = set()
         async for event in runner.stream(run_id):
             if await request.is_disconnected():
                 break
             etype = event.get("type", "message")
             if etype == "result":
-                html = templates.get_template("_run_result.html").render(
-                    {"r": event["result"]}
+                r = event["result"]
+                tid = r["test_id"]
+                # Mid-stream subscribers get persisted results replayed without
+                # their original test_start events — synthesize a group shell
+                # the first time we see each test_id so OOB targets exist.
+                if tid not in seen_test_ids:
+                    seen_test_ids.add(tid)
+                    shell_html = templates.get_template("_test_start.html").render({
+                        "t": {
+                            "test_id": tid,
+                            "runs":    r.get("total", 1),
+                            "mutates": r.get("test_mutates", False),
+                        }
+                    })
+                    yield {"event": "test_start", "data": shell_html}
+
+                all_results = db.list_run_results(run_id)
+                test_results = [x for x in all_results if x["test_id"] == tid]
+                passed_count = sum(1 for x in test_results if x.get("passed"))
+                completed    = len(test_results)
+
+                article_html = templates.get_template("_run_result.html").render({"r": r})
+                # Wrap in a div with hx-swap-oob. htmx unwraps the tagged
+                # element and inserts its children into the target — so the
+                # <article> lands inside .test-group-body with .result intact.
+                article_oob = (
+                    f'<div hx-swap-oob="beforeend:#test-group-body-{tid}">'
+                    f"{article_html}</div>"
                 )
-                yield {"event": "result", "data": html}
+                pill_html = templates.get_template("_test_group_pill.html").render(
+                    {"test_id": tid, "passed": passed_count, "completed": completed}
+                )
+                yield {"event": "result", "data": article_oob + pill_html}
             elif etype == "test_start":
+                seen_test_ids.add(event["test_id"])
                 html = templates.get_template("_test_start.html").render(
                     {"t": event}
                 )
                 yield {"event": "test_start", "data": html}
+            elif etype == "summary":
+                results = db.list_run_results(run_id)
+                planned = runner.planned_total(run_id) or len(results)
+                html = templates.get_template("_run_summary.html").render(
+                    {"results": results, "planned_total": planned}
+                )
+                yield {"event": "summary", "data": html}
             elif etype == "complete":
                 yield {"event": "complete", "data": event.get("status", "")}
             elif etype == "error":

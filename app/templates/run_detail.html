@@ -9,8 +9,8 @@
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
             &middot; model <code>{{ run.model }}</code>
             &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per eval
-            &middot; started {{ run.started_at }}
-            {% if run.finished_at %}&middot; finished {{ run.finished_at }}{% endif %}
+            &middot; started <time class="local-time" datetime="{{ run.started_at }}">{{ run.started_at }}</time>
+            {% if run.finished_at %}&middot; finished <time class="local-time" datetime="{{ run.finished_at }}">{{ run.finished_at }}</time>{% endif %}
         </p>
     </div>
     <div class="header-actions">
@@ -18,6 +18,16 @@
         <a href="/" class="btn btn-secondary">Evals</a>
     </div>
 </section>
+
+<div id="run-summary"
+     {% if is_live %}
+     hx-ext="sse"
+     sse-connect="/runs/{{ run.id }}/stream"
+     sse-swap="summary"
+     hx-swap="innerHTML"
+     {% endif %}>
+    {% include "_run_summary.html" %}
+</div>
 
 <div id="run-results"
      {% if is_live %}
@@ -31,8 +41,20 @@
        server-rendering here would double-render. For completed runs, render
        statically since no stream will populate them. #}
     {% if not is_live %}
-        {% for r in results %}
-            {% include "_run_result.html" %}
+        {% for test_id, iters in groups %}
+            {% set passed = iters|selectattr('passed')|list|length %}
+            {% set completed = iters|length %}
+            <details class="test-group" id="test-group-{{ test_id }}">
+                <summary class="test-group-header">
+                    <code class="test-group-id">{{ test_id }}</code>
+                    {% include "_test_group_pill.html" %}
+                </summary>
+                <div class="test-group-body" id="test-group-body-{{ test_id }}">
+                    {% for r in iters %}
+                        {% include "_run_result.html" %}
+                    {% endfor %}
+                </div>
+            </details>
         {% endfor %}
     {% endif %}
 </div>

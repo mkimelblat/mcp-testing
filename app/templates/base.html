@@ -22,5 +22,17 @@
     <main class="container">
         {% block content %}{% endblock %}
     </main>
+    <script>
+        (function formatLocalTimes(root) {
+            const opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+            (root || document).querySelectorAll('time.local-time[datetime]').forEach(el => {
+                const d = new Date(el.getAttribute('datetime'));
+                if (!isNaN(d)) {
+                    el.textContent = d.toLocaleString(undefined, opts);
+                    el.title = d.toLocaleString();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

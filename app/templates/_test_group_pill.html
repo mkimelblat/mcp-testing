@@ -1,0 +1,6 @@
+{% set status = 'neutral' if completed == 0 else ('ok' if passed == completed else ('warn' if passed * 4 >= completed * 3 else 'fail')) %}
+<span id="test-group-pill-{{ test_id }}"
+      hx-swap-oob="true"
+      class="pill pill-{{ status }}">
+    {{ passed }}/{{ completed }} passed
+</span>

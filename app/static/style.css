@@ -156,12 +156,108 @@ code {
 .test-form .form-actions { margin-top: 1rem; }
 
 /* ── Run detail / results ──────────────────────────────────────────────── */
-.test-start {
-    margin: 1.25rem 0 0.5rem; padding: 0.5rem 0.75rem;
-    background: #eef3f8; border-left: 3px solid #0066cc; border-radius: 3px;
-    font-size: 0.9rem;
+.run-dashboard {
+    display: grid; grid-template-columns: 1.2fr 2fr 0.7fr;
+    gap: 0.85rem; margin-bottom: 1rem;
 }
-.test-start .muted { margin-left: 0.5rem; }
+.dash-card {
+    background: white; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.85rem 1rem;
+}
+.dash-label {
+    font-size: 0.72rem; font-weight: 600; color: #888;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.35rem;
+}
+.dash-value {
+    font-size: 1.6rem; font-weight: 600; color: #1a1a1a;
+    line-height: 1.1;
+}
+.dash-value-sub { font-size: 0.9rem; font-weight: 500; color: #666; }
+.dash-value-unit { font-size: 1rem; font-weight: 500; color: #666; margin-left: 0.1em; }
+.dash-sub {
+    font-size: 0.85rem; color: #666; margin-top: 0.15rem;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    height: 6px; background: #eee; border-radius: 3px; overflow: hidden;
+}
+.progress-bar-fill { height: 100%; transition: width 0.25s ease; }
+.progress-bar-fill-ok       { background: #2e7d32; }
+.progress-bar-fill-warn     { background: #ed9b2a; }
+.progress-bar-fill-fail     { background: #c62828; }
+.progress-bar-fill-running  { background: #0066cc; }
+
+.dash-card-dims .dim-chips {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+}
+.dim-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.25rem 0.6rem; border-radius: 12px;
+    font-size: 0.82rem; font-weight: 500;
+}
+.dim-chip .dim-dot { width: 7px; height: 7px; border-radius: 50%; }
+.dim-chip .dim-name  { color: #333; }
+.dim-chip .dim-ratio { color: #555; font-weight: 500; }
+.dim-chip-ok   { background: #e8f5e9; }
+.dim-chip-ok   .dim-dot { background: #2e7d32; }
+.dim-chip-warn { background: #fff4e0; }
+.dim-chip-warn .dim-dot { background: #ed9b2a; }
+.dim-chip-fail { background: #ffebee; }
+.dim-chip-fail .dim-dot { background: #c62828; }
+.dim-chip-neutral { background: #f0f0f0; }
+.dim-chip-neutral .dim-dot { background: #999; }
+
+.run-progress {
+    background: white; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.75rem 1rem; margin-bottom: 1rem;
+}
+.run-progress-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.4rem;
+}
+.run-progress-count { font-size: 0.95rem; font-weight: 500; color: #333; }
+
+@media (max-width: 720px) {
+    .run-dashboard { grid-template-columns: 1fr; }
+}
+
+.test-group {
+    background: white; border: 1px solid #e5e5e5; border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+.test-group-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    cursor: pointer; user-select: none;
+    list-style: none;
+}
+.test-group-header::-webkit-details-marker { display: none; }
+.test-group-header::before {
+    content: ''; display: inline-block;
+    width: 0; height: 0;
+    border-left: 5px solid #888;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+}
+.test-group[open] > .test-group-header::before {
+    transform: rotate(90deg);
+}
+.test-group-header:hover { background: #fafafa; }
+.test-group-id { font-weight: 600; font-size: 0.95rem; }
+.test-group-header .pill { margin-left: auto; }
+
+.test-group-body {
+    padding: 0.25rem 0.85rem 0.75rem;
+    border-top: 1px solid #f0f0f0;
+}
+.test-group-body .result {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
 
 .result {
     background: white; border: 1px solid #e5e5e5; border-radius: 6px;

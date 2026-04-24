@@ -25,10 +25,15 @@ MAX_CONCURRENT_RUNS = 3
 
 _active_runs: set[int] = set()
 _subscribers: dict[int, list[asyncio.Queue]] = {}
+_run_plans: dict[int, int] = {}
 
 
 def current_run_ids() -> list[int]:
     return sorted(_active_runs)
+
+
+def planned_total(run_id: int) -> int | None:
+    return _run_plans.get(run_id)
 
 
 # ── Event fanout ──────────────────────────────────────────────────────────────
@@ -104,6 +109,13 @@ async def start_run(
     effective_model = model or MODEL
     run_id = db.create_run(effective_model, MCP_SERVER_URL, runs_per_test)
     _active_runs.add(run_id)
+
+    tests_by_id = {t["id"]: t for t in db.list_tests()}
+    _run_plans[run_id] = sum(
+        1 if tests_by_id[tid]["mutates"] else runs_per_test
+        for tid in test_ids if tid in tests_by_id
+    )
+
     asyncio.create_task(_execute_run(run_id, test_ids, runs_per_test, effective_model))
     return run_id
 
@@ -121,6 +133,7 @@ async def _execute_run(
         await _broadcast(run_id, {"type": "complete", "status": "error"})
     finally:
         _active_runs.discard(run_id)
+        _run_plans.pop(run_id, None)
 
 
 async def _execute_run_inner(
@@ -192,3 +205,5 @@ async def _execute_run_inner(
                     "elapsed_seconds":     iter_result["elapsed"],
                 },
             })
+
+            await _broadcast(run_id, {"type": "summary"})

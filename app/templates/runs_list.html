@@ -36,13 +36,12 @@
         {% for r in runs %}
         <tr>
             <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
-            <td>{{ r.started_at }}</td>
-            <td>{{ r.finished_at or '—' }}</td>
+            <td><time class="local-time" datetime="{{ r.started_at }}">{{ r.started_at }}</time></td>
+            <td>{% if r.finished_at %}<time class="local-time" datetime="{{ r.finished_at }}">{{ r.finished_at }}</time>{% else %}—{% endif %}</td>
             <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
             <td>
                 {% if r.results_total %}
-                    {% set failed = r.results_total - r.results_passed %}
-                    <span class="pill pill-{{ 'ok' if failed == 0 else 'fail' }}">
+                    <span class="pill pill-{{ 'ok' if r.results_passed == r.results_total else ('warn' if r.results_passed * 4 >= r.results_total * 3 else 'fail') }}">
                         {{ r.results_passed }}/{{ r.results_total }} passed
                     </span>
                 {% else %}
@@ -54,7 +53,7 @@
                     {% for t in r.tests %}
                         <span class="test-chip">
                             <code>{{ t.test_id }}</code>
-                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('fail' if t.passed == 0 else 'warn') }}">{{ t.passed }}/{{ t.total }}</span>
+                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('warn' if t.passed * 4 >= t.total * 3 else 'fail') }}">{{ t.passed }}/{{ t.total }}</span>
                         </span>
                     {% endfor %}
                 {% else %}
