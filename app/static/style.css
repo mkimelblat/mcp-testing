@@ -39,6 +39,14 @@ code {
 .topbar nav a[aria-current="page"] {
     background: #eef2ff; color: #1a1a1a;
 }
+.topbar nav a.nav-user {
+    margin-left: 0.5rem; padding: 0.35rem 0.6rem;
+    color: #666; font-weight: 400;
+}
+.topbar nav a.nav-user:hover { background: #f2f2f2; color: #1a1a1a; }
+.topbar nav a.nav-user code { font-size: 0.85rem; }
+.settings-auth-as { color: #555; font-size: 0.85rem; margin: 0.25rem 0 0.5rem; }
+.settings-auth-as code { font-size: 0.85rem; }
 
 /* ── Layout ────────────────────────────────────────────────────────────── */
 .container {

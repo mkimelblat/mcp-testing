@@ -22,6 +22,7 @@ Routes:
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import os
 import secrets
@@ -63,6 +64,10 @@ def _style_version() -> str:
     except OSError:
         return "0"
 templates.env.globals["style_version"] = _style_version
+
+# Exposed to templates so any page (topbar, settings, etc) can show which
+# Calendly account the harness is currently authenticated as.
+templates.env.globals["calendly_user_uuid"] = lambda: _current_calendly_user_uuid()
 
 
 @app.on_event("startup")
@@ -210,6 +215,25 @@ def _ensure_calendly_auth() -> str | None:
 
     _store_calendly_tokens(new_tokens)
     return None
+
+
+def _current_calendly_user_uuid() -> str | None:
+    """Return the Calendly user_uuid embedded in the MCP access token's JWT
+    payload, or None if no token is set / the token isn't a decodable JWT.
+    Signature isn't verified — we already trust the token to drive requests."""
+    token = os.environ.get("CALENDLY_MCP_TOKEN")
+    if not token:
+        return None
+    try:
+        parts = token.split(".")
+        if len(parts) < 2:
+            return None
+        pad = "=" * (-len(parts[1]) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(parts[1] + pad))
+    except Exception:
+        return None
+    uuid = payload.get("user_uuid")
+    return uuid if isinstance(uuid, str) else None
 
 
 def _clear_calendly_session() -> None:

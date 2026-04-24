@@ -29,6 +29,12 @@
             <code>mcp.calendly.com</code>. Connect via OAuth to mint one tied to
             your (or a dedicated eval) Calendly account.
         </p>
+        {% set user_uuid = calendly_user_uuid() %}
+        {% if user_uuid %}
+        <p class="settings-auth-as">
+            Authenticated as <code>{{ user_uuid }}</code>
+        </p>
+        {% endif %}
         <div class="settings-actions">
             <a href="/auth/calendly/start" class="btn btn-primary">
                 {% if env_status.calendly %}Reconnect Calendly{% else %}Connect Calendly{% endif %}
