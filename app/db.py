@@ -433,6 +433,40 @@ def set_run_name(run_id: int, name: str | None) -> None:
             raise ValueError(f"run {run_id} not found")
 
 
+def _attach_eval_chips(conn: sqlite3.Connection, runs: list[dict[str, Any]]) -> None:
+    """Populate `r["tests"]` for each run with per-eval pass/total chips.
+    Chips always reflect *all* evals in the run, even when the caller
+    scoped the parent query to a single test."""
+    run_ids = [r["id"] for r in runs]
+    if not run_ids:
+        for r in runs:
+            r["tests"] = []
+        return
+
+    placeholders = ",".join("?" * len(run_ids))
+    per_test = conn.execute(
+        f"""SELECT run_id, test_id,
+                   COUNT(*)                 AS total,
+                   COALESCE(SUM(passed), 0) AS passed,
+                   MIN(id)                  AS first_result_id
+            FROM run_results
+            WHERE run_id IN ({placeholders})
+            GROUP BY run_id, test_id
+            ORDER BY run_id DESC, first_result_id""",
+        run_ids,
+    ).fetchall()
+
+    buckets: dict[int, list[dict[str, Any]]] = {}
+    for row in per_test:
+        buckets.setdefault(row["run_id"], []).append({
+            "test_id": row["test_id"],
+            "passed":  row["passed"],
+            "total":   row["total"],
+        })
+    for r in runs:
+        r["tests"] = buckets.get(r["id"], [])
+
+
 def list_runs(limit: int = 50, query: str = "") -> list[dict[str, Any]]:
     """Return runs with aggregate and per-test pass/total breakdowns.
 
@@ -461,7 +495,9 @@ def list_runs(limit: int = 50, query: str = "") -> list[dict[str, Any]]:
         rows = conn.execute(
             f"""SELECT runs.*,
                        COUNT(rr.id)                AS results_total,
-                       COALESCE(SUM(rr.passed), 0) AS results_passed
+                       COALESCE(SUM(rr.passed), 0) AS results_passed,
+                       AVG(rr.elapsed_seconds)     AS avg_elapsed,
+                       AVG(rr.input_tokens)        AS avg_input_tokens
                 FROM runs
                 LEFT JOIN run_results rr ON rr.run_id = runs.id
                 {where_sql}
@@ -471,33 +507,34 @@ def list_runs(limit: int = 50, query: str = "") -> list[dict[str, Any]]:
             (*where_args, limit),
         ).fetchall()
         runs = [dict(r) for r in rows]
+        _attach_eval_chips(conn, runs)
+    return runs
 
-        run_ids = [r["id"] for r in runs]
-        if run_ids:
-            placeholders = ",".join("?" * len(run_ids))
-            per_test = conn.execute(
-                f"""SELECT run_id, test_id,
-                           COUNT(*)                 AS total,
-                           COALESCE(SUM(passed), 0) AS passed,
-                           MIN(id)                  AS first_result_id
-                    FROM run_results
-                    WHERE run_id IN ({placeholders})
-                    GROUP BY run_id, test_id
-                    ORDER BY run_id DESC, first_result_id""",
-                run_ids,
-            ).fetchall()
-        else:
-            per_test = []
 
-    buckets: dict[int, list[dict[str, Any]]] = {}
-    for row in per_test:
-        buckets.setdefault(row["run_id"], []).append({
-            "test_id": row["test_id"],
-            "passed":  row["passed"],
-            "total":   row["total"],
-        })
-    for r in runs:
-        r["tests"] = buckets.get(r["id"], [])
+def list_runs_for_test(test_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Return runs that executed this test. Scalar aggregates
+    (`results_passed`, `results_total`, `avg_elapsed`, `avg_input_tokens`)
+    are scoped to this test's iterations, so the Results / Avg columns
+    describe how *this* eval performed in that run. The `tests` chip list
+    still shows all evals in the run for full context.
+    """
+    with connect() as conn:
+        rows = conn.execute(
+            """SELECT runs.*,
+                      COUNT(rr.id)                AS results_total,
+                      COALESCE(SUM(rr.passed), 0) AS results_passed,
+                      AVG(rr.elapsed_seconds)     AS avg_elapsed,
+                      AVG(rr.input_tokens)        AS avg_input_tokens
+               FROM runs
+               INNER JOIN run_results rr ON rr.run_id = runs.id
+               WHERE rr.test_id = ?
+               GROUP BY runs.id
+               ORDER BY runs.id DESC
+               LIMIT ?""",
+            (test_id, limit),
+        ).fetchall()
+        runs = [dict(r) for r in rows]
+        _attach_eval_chips(conn, runs)
     return runs
 
 

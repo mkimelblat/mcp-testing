@@ -23,55 +23,7 @@
 </section>
 
 {% if runs %}
-<table class="tests-table">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Started</th>
-            <th>Finished</th>
-            <th>Status</th>
-            <th>Results</th>
-            <th>Evals</th>
-            <th>Model</th>
-            <th>Runs/eval</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for r in runs %}
-        <tr>
-            <td>
-                <a href="/runs/{{ r.id }}">#{{ r.id }}</a>{% if r.name %} <span class="run-name-inline">— {{ r.name }}</span>{% endif %}
-            </td>
-            <td><time class="local-time" datetime="{{ r.started_at }}">{{ r.started_at }}</time></td>
-            <td>{% if r.finished_at %}<time class="local-time" datetime="{{ r.finished_at }}">{{ r.finished_at }}</time>{% else %}—{% endif %}</td>
-            <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
-            <td>
-                {% if r.results_total %}
-                    <span class="pill pill-{{ 'ok' if r.results_passed == r.results_total else ('warn' if r.results_passed * 4 >= r.results_total * 3 else 'fail') }}">
-                        {{ r.results_passed }}/{{ r.results_total }} passed
-                    </span>
-                {% else %}
-                    <span class="muted">—</span>
-                {% endif %}
-            </td>
-            <td class="col-tests">
-                {% if r.tests %}
-                    {% for t in r.tests %}
-                        <span class="test-chip">
-                            <code>{{ t.test_id }}</code>
-                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('warn' if t.passed * 4 >= t.total * 3 else 'fail') }}">{{ t.passed }}/{{ t.total }}</span>
-                        </span>
-                    {% endfor %}
-                {% else %}
-                    <span class="muted">—</span>
-                {% endif %}
-            </td>
-            <td><code>{{ r.model }}</code></td>
-            <td>{{ r.runs_per_test }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    {% include "_runs_table.html" %}
 {% elif query %}
 <div class="empty-state">
     <p class="empty-state-title">No runs match <code>{{ query }}</code></p>

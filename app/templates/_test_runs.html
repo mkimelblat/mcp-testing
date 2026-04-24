@@ -1,0 +1,9 @@
+{% if runs %}
+    {% set highlight_test_id = test.id %}
+    {% include "_runs_table.html" %}
+{% else %}
+<div class="empty-state">
+    <p class="empty-state-title">This eval hasn't been run yet.</p>
+    <p class="empty-state-hint">Select it on the <a href="/">Evals</a> page and click Run.</p>
+</div>
+{% endif %}

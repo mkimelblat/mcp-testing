@@ -49,6 +49,26 @@ code {
     margin-bottom: 1.5rem; gap: 1rem;
 }
 .page-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 600; }
+.page-header-id {
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    font-size: 1.35rem; font-weight: 600;
+    background: #f2f2f2; color: #1a1a1a;
+    padding: 0.15em 0.4em; border-radius: 6px;
+}
+
+.tab-strip {
+    display: flex; gap: 0.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 0.5rem;
+}
+.tab-strip a {
+    color: #555; font-weight: 500;
+    padding: 0.4rem 0.75rem; border-radius: 6px;
+    text-decoration: none;
+}
+.tab-strip a:hover { background: #f2f2f2; color: #1a1a1a; text-decoration: none; }
+.tab-strip a[aria-current="page"] { background: #eef2ff; color: #1a1a1a; }
 .run-title { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .run-id-badge {
     background: #f2f2f2; color: #777;
@@ -142,6 +162,7 @@ code {
 .tests-table .col-tests   { min-width: 18rem; font-size: 0.85rem; line-height: 1.9; }
 .tests-table .col-tests code { font-size: 0.85em; }
 .test-chip { display: inline-block; white-space: nowrap; margin-right: 0.5rem; }
+.test-chip-current code { background: #eef2ff; color: #1a1a1a; }
 .test-ratio      { font-weight: 500; font-size: 0.8rem; margin-left: 0.15rem; }
 .test-ratio-ok   { color: #2e7d32; }
 .test-ratio-warn { color: #b46b00; }

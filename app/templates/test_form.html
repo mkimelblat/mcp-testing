@@ -1,14 +1,26 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == 'new' %}New eval{% else %}Edit {{ test.id }}{% endif %} · Calendly MCP{% endblock %}
+{% block title %}{% if mode == 'new' %}New eval{% else %}{{ test.id }}{% endif %} · Calendly MCP{% endblock %}
 
 {% block content %}
 <section class="page-header">
-    <h1>{% if mode == 'new' %}New eval{% else %}Edit eval{% endif %}</h1>
+    <h1>{% if mode == 'new' %}New eval{% else %}<code class="page-header-id">{{ test.id }}</code>{% endif %}</h1>
     <div class="header-actions">
         <a href="/" class="btn btn-secondary">Cancel</a>
     </div>
 </section>
 
+{% if mode == 'edit' %}
+<nav class="tab-strip" aria-label="Eval sections">
+    <a href="/tests/{{ test.id }}/edit"
+       {% if tab != 'runs' %}aria-current="page"{% endif %}>Edit</a>
+    <a href="/tests/{{ test.id }}/edit?tab=runs"
+       {% if tab == 'runs' %}aria-current="page"{% endif %}>Runs</a>
+</nav>
+{% endif %}
+
+{% if tab == 'runs' %}
+{% include "_test_runs.html" %}
+{% else %}
 <form method="post"
       action="{% if mode == 'new' %}/tests{% else %}/tests/{{ test.id }}{% endif %}"
       class="test-form">
@@ -76,4 +88,5 @@
         </button>
     </div>
 </form>
+{% endif %}
 {% endblock %}

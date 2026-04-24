@@ -220,14 +220,14 @@ def test_create(
 
 
 @app.get("/tests/{test_id}/edit", response_class=HTMLResponse)
-def test_edit_form(request: Request, test_id: str) -> HTMLResponse:
+def test_edit_form(request: Request, test_id: str, tab: str = "edit") -> HTMLResponse:
     test = db.get_test(test_id)
     if not test:
         raise HTTPException(status_code=404, detail=f"Test '{test_id}' not found")
-    return templates.TemplateResponse(
-        request, "test_form.html",
-        {"test": test, "mode": "edit"},
-    )
+    ctx: dict = {"test": test, "mode": "edit", "tab": tab}
+    if tab == "runs":
+        ctx["runs"] = db.list_runs_for_test(test_id)
+    return templates.TemplateResponse(request, "test_form.html", ctx)
 
 
 @app.post("/tests/{test_id}")

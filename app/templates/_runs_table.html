@@ -1,0 +1,68 @@
+{# Shared runs table. Context vars:
+   - `runs` (required): list of dicts with keys id, name, started_at, finished_at,
+     status, results_passed, results_total, tests, model, runs_per_test,
+     avg_elapsed, avg_input_tokens.
+   - `highlight_test_id` (optional): when set, the matching chip in the Evals
+     column is styled as "current" so the user can see which eval the table
+     is scoped to. #}
+<table class="tests-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Started</th>
+            <th>Finished</th>
+            <th>Status</th>
+            <th>Results</th>
+            <th>Evals</th>
+            <th>Model</th>
+            <th>Runs/eval</th>
+            <th>Avg elapsed</th>
+            <th>Avg input</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in runs %}
+        <tr>
+            <td>
+                <a href="/runs/{{ r.id }}">#{{ r.id }}</a>{% if r.name %} <span class="run-name-inline">— {{ r.name }}</span>{% endif %}
+            </td>
+            <td><time class="local-time" datetime="{{ r.started_at }}">{{ r.started_at }}</time></td>
+            <td>{% if r.finished_at %}<time class="local-time" datetime="{{ r.finished_at }}">{{ r.finished_at }}</time>{% else %}—{% endif %}</td>
+            <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
+            <td>
+                {% if r.results_total %}
+                    <span class="pill pill-{{ 'ok' if r.results_passed == r.results_total else ('warn' if r.results_passed * 4 >= r.results_total * 3 else 'fail') }}">
+                        {{ r.results_passed }}/{{ r.results_total }} passed
+                    </span>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td class="col-tests">
+                {% if r.tests %}
+                    {% for t in r.tests %}
+                        <span class="test-chip{% if highlight_test_id and t.test_id == highlight_test_id %} test-chip-current{% endif %}">
+                            <code>{{ t.test_id }}</code>
+                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('warn' if t.passed * 4 >= t.total * 3 else 'fail') }}">{{ t.passed }}/{{ t.total }}</span>
+                        </span>
+                    {% endfor %}
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td><code>{{ r.model }}</code></td>
+            <td>{{ r.runs_per_test }}</td>
+            <td>{% if r.avg_elapsed is not none %}{{ '%.1f'|format(r.avg_elapsed) }}s{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td>
+                {% if r.avg_input_tokens is not none %}
+                <span title="{{ r.avg_input_tokens|round|int }} tokens per iteration">{%
+                    if r.avg_input_tokens >= 1000 %}{{ '%.1f'|format(r.avg_input_tokens / 1000) }}k{%
+                    else %}{{ r.avg_input_tokens|round|int }}{% endif %}</span>
+                {% else %}
+                <span class="muted">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
