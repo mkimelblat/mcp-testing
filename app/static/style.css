@@ -371,7 +371,8 @@ textarea:focus {
     display: flex; align-items: center; gap: 0.75rem;
     margin-bottom: 0.35rem;
 }
-.result-test-id { font-weight: 600; }
+.result-test-id { font-weight: 600; color: #1a1a1a; text-decoration: none; }
+.result-test-id:hover { text-decoration: underline; }
 .result-elapsed { margin-left: auto; font-size: 0.85rem; }
 .result-elapsed-over { color: #c62828; font-weight: 500; }
 

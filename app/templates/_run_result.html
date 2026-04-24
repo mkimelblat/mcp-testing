@@ -9,7 +9,7 @@
         <span class="pill pill-{{ 'ok' if r.passed else 'fail' }}">
             {{ 'PASS' if r.passed else 'FAIL' }}
         </span>
-        <strong class="result-test-id">{{ r.test_id }}</strong>
+        <a class="result-test-id" href="/tests/{{ r.test_id }}/edit">{{ r.test_id }}</a>
         <span class="muted">iter {{ r.iteration }}{% if r.total %}/{{ r.total }}{% endif %}</span>
         <span class="muted result-elapsed{% if r.test_max_seconds and not r.time_ok %} result-elapsed-over{% endif %}">
             {{ '%.1f'|format(r.elapsed_seconds) }}s{% if r.test_max_seconds %} / {{ r.test_max_seconds }}s{% endif %}
