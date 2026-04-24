@@ -11,8 +11,18 @@
             &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per eval
             &middot; started <time class="local-time" datetime="{{ run.started_at }}">{{ run.started_at }}</time>
             {% if run.finished_at %}&middot; finished <time class="local-time" datetime="{{ run.finished_at }}">{{ run.finished_at }}</time>{% endif %}
+            {% if query %}&middot; {{ results|length }} iteration{{ '' if results|length == 1 else 's' }} matching <code>{{ query }}</code>{% endif %}
         </p>
     </div>
+    {% if not is_live %}
+    <div class="header-actions">
+        <form method="get" action="/runs/{{ run.id }}" class="runs-search">
+            <input type="search" name="q" value="{{ query }}"
+                   placeholder="search iterations&hellip;">
+            {% if query %}<a href="/runs/{{ run.id }}" class="btn btn-secondary">Clear</a>{% endif %}
+        </form>
+    </div>
+    {% endif %}
 </section>
 
 {# Single SSE connection shared by all three panes. Three sse-connect
@@ -31,24 +41,28 @@
            server-rendering here would double-render. For completed runs,
            render statically since no stream will populate them. #}
         {% if not is_live %}
-            {% for test_id, iters in groups %}
-                {% set passed = iters|selectattr('passed')|list|length %}
-                {% set completed = iters|length %}
-                <details class="test-group" id="test-group-{{ test_id }}"
-                         {% if eval_groups_open() %}open{% endif %}>
-                    <summary class="test-group-header">
-                        <code class="test-group-id">{{ test_id }}</code>
-                        <span class="pill pill-{{ 'ok' if passed == completed else ('warn' if passed * 4 >= completed * 3 else 'fail') }}">
-                            {{ passed }}/{{ completed }} passed
-                        </span>
-                    </summary>
-                    <div class="test-group-body" id="test-group-body-{{ test_id }}">
-                        {% for r in iters %}
-                            {% include "_run_result.html" %}
-                        {% endfor %}
-                    </div>
-                </details>
-            {% endfor %}
+            {% if groups %}
+                {% for test_id, iters in groups %}
+                    {% set passed = iters|selectattr('passed')|list|length %}
+                    {% set completed = iters|length %}
+                    <details class="test-group" id="test-group-{{ test_id }}"
+                             {% if eval_groups_open() or query %}open{% endif %}>
+                        <summary class="test-group-header">
+                            <code class="test-group-id">{{ test_id }}</code>
+                            <span class="pill pill-{{ 'ok' if passed == completed else ('warn' if passed * 4 >= completed * 3 else 'fail') }}">
+                                {{ passed }}/{{ completed }} passed
+                            </span>
+                        </summary>
+                        <div class="test-group-body" id="test-group-body-{{ test_id }}">
+                            {% for r in iters %}
+                                {% include "_run_result.html" %}
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endfor %}
+            {% elif query %}
+                <p class="muted">No iterations match <code>{{ query }}</code>. <a href="/runs/{{ run.id }}">Clear search</a></p>
+            {% endif %}
         {% endif %}
     </div>
 

@@ -317,12 +317,32 @@ def _group_by_test(results: list[dict]) -> list[tuple[str, list[dict]]]:
     return [(tid, groups[tid]) for tid in order]
 
 
+def _matches(result: dict, needle_lower: str) -> bool:
+    """Case-insensitive substring match across the same fields the runs
+    list search covers."""
+    fields = (
+        result.get("response_text", ""),
+        result.get("tool_reason",   ""),
+        result.get("judge_reason",  ""),
+        " ".join(result.get("tools_called") or []),
+    )
+    return any(needle_lower in (f or "").lower() for f in fields)
+
+
 @app.get("/runs/{run_id}", response_class=HTMLResponse)
-def run_detail(request: Request, run_id: int) -> HTMLResponse:
+def run_detail(request: Request, run_id: int, q: str = "") -> HTMLResponse:
     run = db.get_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     results = db.list_run_results(run_id)
+
+    # Search is only offered for completed runs (see template), but if a
+    # live page somehow posts a query, treat it as no filter.
+    query = q.strip() if run["status"] != "running" else ""
+    if query:
+        needle = query.lower()
+        results = [r for r in results if _matches(r, needle)]
+
     return templates.TemplateResponse(
         request, "run_detail.html",
         {
@@ -331,6 +351,7 @@ def run_detail(request: Request, run_id: int) -> HTMLResponse:
             "groups":        _group_by_test(results),
             "is_live":       run["status"] == "running",
             "planned_total": runner.planned_total(run_id) or len(results),
+            "query":         query,
         },
     )
 
