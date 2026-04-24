@@ -29,9 +29,11 @@
         <span class="muted">—</span>
         {% endif %}
     </td>
-    <td class="col-mutates">
-        {% if t.mutates %}<span class="pill pill-warn">writes</span>{% else %}<span class="pill pill-ok">read</span>{% endif %}
-        {% if t.max_seconds is not none %}<span class="pill pill-neutral">≤{{ t.max_seconds }}s</span>{% endif %}
+    <td class="col-rw">
+        {% if t.mutates %}<span class="pill pill-warn">write</span>{% else %}<span class="pill pill-ok">read</span>{% endif %}
+    </td>
+    <td class="col-runtime">
+        {% if t.max_seconds is not none %}<span class="pill pill-neutral">≤{{ t.max_seconds }}s</span>{% else %}<span class="muted">—</span>{% endif %}
     </td>
     <td class="col-actions">
         <a href="/tests/{{ t.id }}/edit" class="action">edit</a>

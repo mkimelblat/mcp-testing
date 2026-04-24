@@ -80,7 +80,8 @@ code {
 .tests-table tr:last-child td { border-bottom: none; }
 .tests-table .col-check { width: 2rem; }
 .tests-table .col-id    { width: 14rem; font-weight: 500; }
-.tests-table .col-mutates { width: 5rem; text-align: center; }
+.tests-table .col-rw      { width: 4.5rem; text-align: center; }
+.tests-table .col-runtime { width: 5rem;   text-align: center; }
 .tests-table .col-actions { width: 8rem; text-align: right; white-space: nowrap; }
 .tests-table .col-tests   { min-width: 18rem; font-size: 0.85rem; line-height: 1.9; }
 .tests-table .col-tests code { font-size: 0.85em; }
