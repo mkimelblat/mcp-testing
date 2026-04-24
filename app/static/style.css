@@ -44,19 +44,25 @@ code {
 }
 .page-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 600; }
 .run-title { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.run-id-badge {
+    background: #f2f2f2; color: #777;
+    font-size: 0.85rem; font-weight: 500;
+    padding: 0.25rem 0.55rem; border-radius: 6px;
+}
+.run-rename-btn {
+    background: none; border: none; cursor: pointer; color: #888;
+    padding: 0.3rem; border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.run-rename-btn:hover { background: #f2f2f2; color: #1a1a1a; }
 .run-name-input {
-    flex: 1; min-width: 12rem; max-width: 32rem;
-    background: transparent; border: 1px solid transparent;
-    padding: 0.15rem 0.5rem; margin: 0;
-    font: inherit; font-weight: 500; color: #555;
-    border-radius: 6px;
+    font: inherit; font-size: 1.5rem; font-weight: 600;
+    color: #1a1a1a; background: white;
+    border: 1px solid #0066cc; box-shadow: 0 0 0 3px rgba(0,102,204,0.15);
+    border-radius: 6px; padding: 0.1rem 0.5rem; margin: 0;
+    min-width: 18rem; outline: none;
 }
-.run-name-input::placeholder { color: #aaa; font-weight: 400; font-style: italic; }
-.run-name-input:hover { border-color: #e0e0e0; background: #fafafa; }
-.run-name-input:focus {
-    outline: none; background: white;
-    border-color: #0066cc; box-shadow: 0 0 0 3px rgba(0,102,204,0.15);
-}
+.run-name-input::placeholder { color: #aaa; font-weight: 500; font-style: italic; }
 .run-name-inline { color: #777; font-weight: 400; }
 .subtitle { margin: 0; color: #666; font-size: 0.9rem; }
 .header-actions { flex-shrink: 0; display: flex; gap: 0.5rem; align-items: center; }

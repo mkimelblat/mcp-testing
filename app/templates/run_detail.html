@@ -5,14 +5,26 @@
 <section class="page-header">
     <div>
         <h1 class="run-title">
-            <span class="run-id">Run #{{ run.id }}</span>
-            <input class="run-name-input" type="text"
+            <span class="run-title-text" data-title-text>{% if run.name %}{{ run.name }}{% else %}Run #{{ run.id }}{% endif %}</span>
+            <input class="run-name-input" type="text" hidden
                    value="{{ run.name or '' }}"
                    placeholder="Name this run"
                    maxlength="200"
                    autocomplete="off"
                    aria-label="Run name"
-                   data-rename-url="/runs/{{ run.id }}/name">
+                   data-rename-input
+                   data-rename-url="/runs/{{ run.id }}/name"
+                   data-id-fallback="Run #{{ run.id }}">
+            <span class="run-id-badge">#{{ run.id }}</span>
+            <button type="button" class="run-rename-btn" data-rename-btn
+                    title="Click to rename" aria-label="Rename run">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </button>
         </h1>
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
@@ -118,30 +130,50 @@
 
 <script>
     (function () {
-        const input = document.querySelector('.run-name-input');
-        if (!input) return;
-        const url = input.dataset.renameUrl;
+        const titleEl = document.querySelector('[data-title-text]');
+        const input   = document.querySelector('[data-rename-input]');
+        const btn     = document.querySelector('[data-rename-btn]');
+        const badge   = document.querySelector('.run-id-badge');
+        if (!titleEl || !input || !btn) return;
+
+        const url      = input.dataset.renameUrl;
+        const fallback = input.dataset.idFallback;
         let saved = input.value;
 
+        function enter() {
+            titleEl.hidden = true;
+            badge.hidden = true;
+            btn.hidden = true;
+            input.hidden = false;
+            input.focus();
+            input.select();
+        }
+        function leave() {
+            input.hidden = true;
+            titleEl.hidden = false;
+            badge.hidden = false;
+            btn.hidden = false;
+        }
         async function save() {
             const value = input.value.trim();
-            if (value === saved) return;
-            const body = new FormData();
-            body.append('name', value);
-            const resp = await fetch(url, { method: 'POST', body });
-            if (!resp.ok) return;
-            saved = value;
-            const idPart = document.querySelector('.run-id').textContent;
-            document.title = value
-                ? `${idPart} — ${value} · Calendly MCP`
-                : `${idPart} · Calendly MCP`;
+            if (value !== saved) {
+                const body = new FormData();
+                body.append('name', value);
+                const resp = await fetch(url, { method: 'POST', body });
+                if (!resp.ok) { leave(); return; }
+                saved = value;
+                titleEl.textContent = value || fallback;
+                document.title = (value ? `${fallback} — ${value}` : fallback) + ' · Calendly MCP';
+            }
+            leave();
         }
 
+        btn.addEventListener('click', enter);
+        input.addEventListener('blur', save);
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
-            if (e.key === 'Escape') { input.value = saved; input.blur(); }
+            if (e.key === 'Escape') { input.value = saved; leave(); }
         });
-        input.addEventListener('blur', save);
     })();
 </script>
 {% endblock %}
