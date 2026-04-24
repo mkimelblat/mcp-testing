@@ -153,17 +153,20 @@ code {
     background: #f7f7f7; font-weight: 600; font-size: 0.8rem;
     text-transform: uppercase; color: #666; letter-spacing: 0.03em;
 }
+.tests-table td { font-size: 0.85rem; line-height: 1.6; }
+.tests-table td .pill,
+.tests-table td .test-ratio,
+.tests-table td code { font-size: inherit; }
 .tests-table tr:last-child td { border-bottom: none; }
 .tests-table .col-check { width: 2rem; }
 .tests-table .col-id    { width: 14rem; font-weight: 500; }
 .tests-table .col-rw      { width: 4.5rem; text-align: center; }
 .tests-table .col-runtime { width: 5rem;   text-align: center; }
 .tests-table .col-actions { width: 8rem; text-align: right; white-space: nowrap; }
-.tests-table .col-tests   { min-width: 18rem; font-size: 0.85rem; line-height: 1.9; }
-.tests-table .col-tests code { font-size: 0.85em; }
+.tests-table .col-tests   { min-width: 18rem; line-height: 1.9; }
 .test-chip { display: inline-block; white-space: nowrap; margin-right: 0.5rem; }
 .test-chip-current code { background: #eef2ff; color: #1a1a1a; }
-.test-ratio      { font-weight: 500; font-size: 0.8rem; margin-left: 0.15rem; }
+.test-ratio     { font-weight: 500; margin-left: 0.15rem; }
 .test-ratio-ok   { color: #2e7d32; }
 .test-ratio-warn { color: #b46b00; }
 .test-ratio-fail { color: #c62828; }
