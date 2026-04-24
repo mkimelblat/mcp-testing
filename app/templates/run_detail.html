@@ -16,6 +16,12 @@
     </div>
     {% if not is_live %}
     <div class="header-actions">
+        {% if groups %}
+        <div class="group-toggle">
+            <button type="button" class="btn btn-secondary" data-group-toggle="open">Expand all</button>
+            <button type="button" class="btn btn-secondary" data-group-toggle="close">Collapse all</button>
+        </div>
+        {% endif %}
         <form method="get" action="/runs/{{ run.id }}" class="runs-search">
             <input type="search" name="q" value="{{ query }}"
                    placeholder="search iterations&hellip;">
@@ -24,6 +30,17 @@
     </div>
     {% endif %}
 </section>
+
+{% if not is_live and groups %}
+<script>
+    document.querySelectorAll('[data-group-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const open = btn.dataset.groupToggle === 'open';
+            document.querySelectorAll('details.test-group').forEach(d => { d.open = open; });
+        });
+    });
+</script>
+{% endif %}
 
 {# Single SSE connection shared by all three panes. Three sse-connect
    elements would open three EventSources; each auto-reconnects on close,

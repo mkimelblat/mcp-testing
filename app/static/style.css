@@ -47,6 +47,7 @@ code {
 .header-actions { flex-shrink: 0; display: flex; gap: 0.5rem; align-items: center; }
 .runs-search { display: flex; gap: 0.5rem; align-items: center; }
 .runs-search input[type="search"] { width: 22rem; }
+.group-toggle { display: flex; gap: 0.25rem; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
