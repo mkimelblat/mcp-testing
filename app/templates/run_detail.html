@@ -13,10 +13,6 @@
             {% if run.finished_at %}&middot; finished <time class="local-time" datetime="{{ run.finished_at }}">{{ run.finished_at }}</time>{% endif %}
         </p>
     </div>
-    <div class="header-actions">
-        <a href="/runs" class="btn btn-secondary">All runs</a>
-        <a href="/" class="btn btn-secondary">Evals</a>
-    </div>
 </section>
 
 {# Single SSE connection shared by all three panes. Three sse-connect
