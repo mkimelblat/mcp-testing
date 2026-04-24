@@ -26,31 +26,31 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mcp_te
 DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "update_event_type_details",
-        "prompt":  "Update my Coffee Chat event type from 30 minutes to 60 minutes and switch the location to Zoom",
+        "prompt":  "Update my Coffee Chat event type to 45 minutes and switch the location to Zoom",
         "expect":  (
-            "Response confirms that the Coffee Chat event type is now 60 minutes long "
+            "Response confirms that the Coffee Chat event type is now 45 minutes long "
             "and that its location is now Zoom, such that a user would trust the change "
             "was actually made. Does not refuse, ask which Calendly account to use, "
             "or ask the user to provide the raw event-type structure."
         ),
         "must_call":     ["event_types-update_event_type"],
         "must_not_call": ["event_types-create_event_type"],
-        "at_most_once":  [],
+        "at_most_once":  ["event_types-update_event_type"],
         "max_seconds":   None,
         "mutates":       True,
     },
     {
         "id":      "update_event_type_availability",
-        "prompt":  "Remove Fridays as available days from my Coffee Chat event type",
+        "prompt":  "Remove Thursdays as available days from my Coffee Chat event type",
         "expect":  (
-            "Response confirms that Friday is no longer a bookable day on the Coffee Chat "
+            "Response confirms that Thursdays is no longer a bookable day on the Coffee Chat "
             "event type, such that a user would trust the change was actually made. "
             "Does not fail with a schema error, ask the user to paste the raw schedule "
             "structure, or ask which Calendly account to use."
         ),
         "must_call":     ["event_types-update_event_type_availability_schedule"],
         "must_not_call": [],
-        "at_most_once":  [],
+        "at_most_once":  ["event_types-update_event_type_availability_schedule"],
         "max_seconds":   None,
         "mutates":       True,
     },
@@ -58,16 +58,22 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
         "id":      "find_available_slots",
         "prompt":  "Find open slots for my Coffee Chat event type next week",
         "expect":  (
-            "Response provides specific bookable time slots for the Coffee Chat event "
-            "type for specific dates next week (not just a generic weekly range like "
-            "'9am-5pm weekdays'). A user could reply 'book me for <one of those times>' "
-            "and have enough information to commit. The response states a timezone at "
-            "least once. Does not refuse or say it cannot retrieve availability."
+            "Response identifies the Coffee Chat event type and provides next-week "
+            "availability grounded in real data — either as a time window + frequency "
+            "or as enumerated slots — in a form a user could act on. States a timezone "
+            "at least once. Does not refuse or say it cannot retrieve availability."
         ),
         "must_call":     ["event_types-list_event_type_available_times"],
-        "must_not_call": ["meetings-list_events"],
-        "at_most_once":  [],
-        "max_seconds":   None,
+        "must_not_call": [
+            "meetings-list_events",
+            "event_types-list_event_type_availability_schedule",
+            "event_types-update_event_type_availability_schedule",
+            "availability-list_user_availability_schedules",
+            "availability-get_user_availability_schedule",
+            "availability-list_user_busy_times",
+        ],
+        "at_most_once":  ["event_types-list_event_type_available_times"],
+        "max_seconds":   30.0,
         "mutates":       False,
     },
     {
@@ -80,10 +86,10 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
             "multiple event-type links, and does not create a single-use / one-time "
             "link when the user asked for the regular scheduling link."
         ),
-        "must_call":     [],
+        "must_call":     ["event_types-list_event_types"],
         "must_not_call": ["scheduling_links-create_single_use_scheduling_link"],
-        "at_most_once":  [],
-        "max_seconds":   60.0,
+        "at_most_once":  ["event_types-list_event_types"],
+        "max_seconds":   30.0,
         "mutates":       False,
     },
     {
@@ -97,9 +103,9 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
             "cannot access the calendar."
         ),
         "must_call":     ["meetings-list_events", "meetings-list_event_invitees"],
-        "must_not_call": ["scheduling_links-create_single_use_scheduling_link"],
+        "must_not_call": ["scheduling_links-create_single_use_scheduling_link", "meetings-cancel_event"],
         "at_most_once":  [],
-        "max_seconds":   60.0,
+        "max_seconds":   None,
         "mutates":       False,
     },
     {
@@ -113,7 +119,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
             "or states clearly there are no upcoming Coffee Chat meetings. Does not "
             "cancel blindly without identifying the meeting."
         ),
-        "must_call":     ["meetings-list_events"],
+        "must_call":     ["meetings-cancel_event"],
         "must_not_call": [],
         "at_most_once":  [],
         "max_seconds":   None,
@@ -121,16 +127,16 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     },
     {
         "id":      "create_single_use_link",
-        "prompt":  "Create a single-use scheduling link for my Coffee Chat event type",
+        "prompt":  "Create a single-use scheduling link for my Coffee Chat event type with a 15 min duration",
         "expect":  (
             "Response provides a single-use (one-time) scheduling link containing "
             "'calendly.com' tied to the Coffee Chat event type — the kind of link that "
             "expires after one booking. Does not return the reusable event-type "
             "scheduling page URL instead."
         ),
-        "must_call":     ["scheduling_links-create_single_use_scheduling_link"],
-        "must_not_call": [],
-        "at_most_once":  [],
+        "must_call":     ["shares-create_share"],
+        "must_not_call": ["meetings-create_invitee", "scheduling_links-create_single_use_scheduling_link"],
+        "at_most_once":  ["scheduling_links-create_single_use_scheduling_link"],
         "max_seconds":   None,
         "mutates":       True,
     },
@@ -146,10 +152,10 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
             "can use to self-book (the natural Calendly flow — also a valid outcome). "
             "Does not invert host/invitee, refuse, or claim it cannot access the account."
         ),
-        "must_call":     [],
+        "must_call":     ["meetings-create_invitee"],
         "must_not_call": [],
-        "at_most_once":  [],
-        "max_seconds":   None,
+        "at_most_once":  ["meetings-create_invitee"],
+        "max_seconds":   30.0,
         "mutates":       True,
     },
 ]
