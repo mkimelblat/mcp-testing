@@ -19,54 +19,56 @@
     </div>
 </section>
 
-<div id="run-summary"
-     {% if is_live %}
-     hx-ext="sse"
-     sse-connect="/runs/{{ run.id }}/stream"
-     sse-swap="summary"
-     hx-swap="innerHTML"
-     {% endif %}>
-    {% include "_run_summary.html" %}
-</div>
+{# Single SSE connection shared by all three panes. Three sse-connect
+   elements would open three EventSources; each auto-reconnects on close,
+   and each reconnect replays from the server, duplicating the groups. #}
+<div {% if is_live %}hx-ext="sse" sse-connect="/runs/{{ run.id }}/stream"{% endif %}>
+    <div id="run-summary"
+         {% if is_live %}sse-swap="summary" hx-swap="innerHTML"{% endif %}>
+        {% include "_run_summary.html" %}
+    </div>
 
-<div id="run-results"
-     {% if is_live %}
-     hx-ext="sse"
-     sse-connect="/runs/{{ run.id }}/stream"
-     sse-swap="result,test_start"
-     hx-swap="beforeend"
-     {% endif %}>
-    {# For live runs, leave empty: the SSE stream replays already-persisted
-       results as 'result' events before subscribing to new ones, so
-       server-rendering here would double-render. For completed runs, render
-       statically since no stream will populate them. #}
-    {% if not is_live %}
-        {% for test_id, iters in groups %}
-            {% set passed = iters|selectattr('passed')|list|length %}
-            {% set completed = iters|length %}
-            <details class="test-group" id="test-group-{{ test_id }}">
-                <summary class="test-group-header">
-                    <code class="test-group-id">{{ test_id }}</code>
-                    {% include "_test_group_pill.html" %}
-                </summary>
-                <div class="test-group-body" id="test-group-body-{{ test_id }}">
-                    {% for r in iters %}
-                        {% include "_run_result.html" %}
-                    {% endfor %}
-                </div>
-            </details>
-        {% endfor %}
+    <div id="run-results"
+         {% if is_live %}sse-swap="result,test_start" hx-swap="beforeend"{% endif %}>
+        {# For live runs, leave empty: the SSE stream replays already-persisted
+           results as 'result' events before subscribing to new ones, so
+           server-rendering here would double-render. For completed runs,
+           render statically since no stream will populate them. #}
+        {% if not is_live %}
+            {% for test_id, iters in groups %}
+                {% set passed = iters|selectattr('passed')|list|length %}
+                {% set completed = iters|length %}
+                <details class="test-group" id="test-group-{{ test_id }}">
+                    <summary class="test-group-header">
+                        <code class="test-group-id">{{ test_id }}</code>
+                        {% include "_test_group_pill.html" %}
+                    </summary>
+                    <div class="test-group-body" id="test-group-body-{{ test_id }}">
+                        {% for r in iters %}
+                            {% include "_run_result.html" %}
+                        {% endfor %}
+                    </div>
+                </details>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if is_live %}
+    <div id="run-footer" sse-swap="complete" hx-swap="innerHTML">
+        <p class="muted">Running&hellip; results will stream in below as each iteration completes.</p>
+    </div>
+
+    <script>
+      // When the stream emits `complete`, the server ends the response.
+      // Without this, htmx-sse would auto-reconnect and hit the replay
+      // branch, piling duplicate groups onto the page. Close the
+      // EventSource on complete so it stays closed.
+      document.body.addEventListener('htmx:sseMessage', (e) => {
+          if (e.detail.type === 'complete' && e.detail.target) {
+              e.detail.target.close();
+          }
+      });
+    </script>
     {% endif %}
 </div>
-
-{% if is_live %}
-<div id="run-footer"
-     hx-ext="sse"
-     sse-connect="/runs/{{ run.id }}/stream"
-     sse-swap="complete"
-     hx-swap="innerHTML">
-    <p class="muted">Running&hellip; results will stream in below as each iteration completes.</p>
-</div>
-
-{% endif %}
 {% endblock %}
