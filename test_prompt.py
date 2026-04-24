@@ -29,7 +29,9 @@ import os
 import sys
 import time
 from collections import Counter
+from contextvars import ContextVar
 
+import httpx
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
@@ -38,12 +40,14 @@ load_dotenv()
 MCP_SERVER_URL = "https://mcp.calendly.com"
 MODEL          = "gpt-5.1"
 # Judge uses a fixed OpenAI model regardless of the main model.
-# Rationale: (1) a separate TPM bucket avoids contention with the main
-# model's bucket (e.g. sonnet-4-6 and gpt-4o both have 30k/min caps that
-# saturate on tool-heavy runs); (2) a fixed judge produces consistent
-# verdicts across different main models, which matters for comparing
-# eval results. gpt-5.1 has a 500k TPM ceiling on this project so it
-# won't contend with gpt-4o main runs either.
+# Rationale: (1) gpt-5.1 has a 500k input TPM cap, which isolates the
+# judge from whichever bucket the main model is hitting (sonnet-4-6,
+# opus-4-7, and gpt-4o all share 30k/min caps that saturate on
+# tool-heavy runs); (2) a fixed judge produces consistent verdicts
+# across different main models, which matters for comparing eval
+# results. gpt-4.1 would be non-reasoning and support temperature=0,
+# but this project doesn't have access to it (403). gpt-5.1 is a
+# reasoning model, so temperature=0 is correctly gated off below.
 JUDGE_MODEL    = "gpt-5.1"
 
 
@@ -69,6 +73,32 @@ _openai_client: AsyncOpenAI | None = None
 _anthropic_client = None  # late import
 
 
+# Accumulates SDK retry backoff (time between a 429 response and the
+# next request). Per-task via ContextVar so concurrent run_test calls
+# don't interfere. Reset at the top of each iteration in run_test.
+_retry_wait:  ContextVar[float]        = ContextVar("_retry_wait",  default=0.0)
+_last_429_at: ContextVar[float | None] = ContextVar("_last_429_at", default=None)
+
+
+async def _on_response(response: httpx.Response) -> None:
+    if response.status_code == 429:
+        _last_429_at.set(time.monotonic())
+
+
+async def _on_request(request: httpx.Request) -> None:
+    last = _last_429_at.get()
+    if last is not None:
+        _retry_wait.set(_retry_wait.get() + (time.monotonic() - last))
+        _last_429_at.set(None)
+
+
+def _make_http_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        timeout=120.0,
+        event_hooks={"request": [_on_request], "response": [_on_response]},
+    )
+
+
 def _get_openai_client() -> AsyncOpenAI:
     global _openai_client
     if _openai_client is None:
@@ -76,6 +106,7 @@ def _get_openai_client() -> AsyncOpenAI:
             organization=os.environ.get("OPENAI_ORG_ID") or None,
             max_retries=6,
             timeout=120.0,
+            http_client=_make_http_client(),
         )
     return _openai_client
 
@@ -87,6 +118,7 @@ def _get_anthropic_client():
         _anthropic_client = AsyncAnthropic(
             max_retries=6,
             timeout=120.0,
+            http_client=_make_http_client(),
         )
     return _anthropic_client
 
@@ -113,6 +145,10 @@ _JUDGE_SYSTEM_PROMPT = (
     "listed tool could plausibly have produced them — either the tools "
     "list is empty, or the tools called are unrelated to the facts "
     "claimed.\n\n"
+    "When evidence is ambiguous — when specific facts in the response "
+    "*could plausibly* have come from a listed tool — default to "
+    "GROUNDED, not FABRICATED. Reserve the fabrication label for cases "
+    "where no listed tool could have produced the claim.\n\n"
     "Judge pass/fail strictly against the stated criterion. Do not "
     "penalize the response for things the criterion does not ask about.\n\n"
     'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
@@ -317,6 +353,8 @@ async def run_test(
 
     for i in range(runs):
         print(f"{prefix}Run {i + 1}/{runs} ... ", end="", flush=True)
+        _retry_wait.set(0.0)
+        _last_429_at.set(None)
         t0 = time.monotonic()
 
         tool_ok,          tool_reason          = True,  ""
@@ -327,10 +365,10 @@ async def run_test(
 
         try:
             text, tools_called = await run_once(prompt, token, model=m)
-            # Stop the clock here so `elapsed` measures only the model under
-            # test, not the judge overhead (judge runs on gpt-5.1 which can
-            # add ~1-3s and has nothing to do with the main model's speed).
-            elapsed = time.monotonic() - t0
+            # Wall-clock minus SDK retry backoff — strips rolling-window
+            # TPM congestion so successive iterations on capped models
+            # (sonnet-4-6, opus-4-7, gpt-4o) are comparable to iter 1.
+            elapsed = (time.monotonic() - t0) - _retry_wait.get()
             tool_ok,         tool_reason         = check_tools(tools_called, must_call, must_not_call)
             at_most_once_ok, at_most_once_reason = check_at_most_once(tools_called, at_most_once)
             judge_ok,        judge_reason        = await judge(text, expect, tools_called=tools_called, model=m)
@@ -338,7 +376,7 @@ async def run_test(
             judge_reason = f"Exception: {e}"
 
         if elapsed is None:
-            elapsed = time.monotonic() - t0
+            elapsed = (time.monotonic() - t0) - _retry_wait.get()
         time_ok, time_reason = check_time(elapsed, max_seconds)
         passed = tool_ok and judge_ok and at_most_once_ok and time_ok
 
