@@ -51,17 +51,12 @@
             </td>
             <td class="col-tests">
                 {% if r.tests %}
-                    {% set preview = r.tests[:2] %}
-                    {% set extra = r.tests|length - preview|length %}
-                    {% set full = [] %}
-                    {% for t in r.tests %}{% set _ = full.append(t.test_id ~ ' ' ~ t.passed ~ '/' ~ t.total) %}{% endfor %}
-                    <span title="{{ full|join(', ') }}">
-                        {% for t in preview %}
+                    {% for t in r.tests %}
+                        <span class="test-chip">
                             <code>{{ t.test_id }}</code>
-                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('fail' if t.passed == 0 else 'warn') }}">{{ t.passed }}/{{ t.total }}</span>{% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                        {% if extra > 0 %}<span class="muted">, +{{ extra }} more</span>{% endif %}
-                    </span>
+                            <span class="test-ratio test-ratio-{{ 'ok' if t.passed == t.total else ('fail' if t.passed == 0 else 'warn') }}">{{ t.passed }}/{{ t.total }}</span>
+                        </span>
+                    {% endfor %}
                 {% else %}
                     <span class="muted">—</span>
                 {% endif %}
