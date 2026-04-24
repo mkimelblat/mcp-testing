@@ -27,17 +27,18 @@
 
     {% if not is_live %}
     <div class="results-toolbar">
-        {% if groups %}
-        <div class="group-toggle">
-            <button type="button" class="btn btn-secondary" data-group-toggle="open">Expand all</button>
-            <button type="button" class="btn btn-secondary" data-group-toggle="close">Collapse all</button>
-        </div>
-        {% endif %}
         <form method="get" action="/runs/{{ run.id }}" class="runs-search">
             <input type="search" name="q" value="{{ query }}"
                    placeholder="search iterations&hellip;">
             {% if query %}<a href="/runs/{{ run.id }}" class="btn btn-secondary">Clear</a>{% endif %}
         </form>
+        {% if groups %}
+        <div class="group-toggle">
+            <button type="button" class="group-toggle-btn" data-group-toggle="open">Expand all</button>
+            <span class="group-toggle-sep">·</span>
+            <button type="button" class="group-toggle-btn" data-group-toggle="close">Collapse all</button>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
