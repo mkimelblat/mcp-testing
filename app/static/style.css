@@ -172,7 +172,9 @@ code {
 .tests-table .col-runtime { width: 5rem;   text-align: center; }
 .tests-table .col-actions { width: 8rem; text-align: right; white-space: nowrap; }
 .tests-table .col-tests   { min-width: 18rem; line-height: 1.9; }
-.tests-table .col-tags    { width: 12rem; }
+.tests-table .col-tags    { width: 10rem; }
+.tests-table .col-tools   { max-width: 20rem; }
+.tests-table .col-tools code { overflow-wrap: anywhere; word-break: break-word; }
 .tests-table th .sort-link {
     color: inherit; text-decoration: none; cursor: pointer;
     text-transform: inherit; letter-spacing: inherit;
