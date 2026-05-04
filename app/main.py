@@ -37,7 +37,7 @@ from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
 from app import calendly_oauth, db, provider_models, runner
-from test_prompt import MCP_SERVER_URL, MODEL
+from test_prompt import MODEL, get_mcp_url
 
 load_dotenv()
 
@@ -304,7 +304,7 @@ def index(
             "order":          order,
             "tag":            tag,
             "model":          MODEL,
-            "mcp_url":        MCP_SERVER_URL,
+            "mcp_url":        get_mcp_url(),
             "env_status":     _env_status(),
             "model_options":  _model_options(),
         },
@@ -640,6 +640,8 @@ def settings_page(request: Request, error: str = "", ok: str = "") -> HTMLRespon
         {
             "env_status":        _env_status(),
             "available_models":  _available_models,
+            "mcp_env":           "staging" if os.environ.get("MCP_ENV") == "staging" else "prod",
+            "mcp_url":           get_mcp_url(),
             "error":             error,
             "ok":                ok,
         },
@@ -687,6 +689,23 @@ def settings_eval_groups_default_open(
     _set_env("EVAL_GROUPS_DEFAULT_OPEN",
              "true" if default_state == "expanded" else "false")
     return RedirectResponse("/settings?ok=Preference+saved", status_code=303)
+
+
+@app.post("/settings/mcp-env")
+def settings_mcp_env(mcp_env: str = Form(...)) -> RedirectResponse:
+    if mcp_env not in ("prod", "staging"):
+        raise HTTPException(status_code=400, detail="Invalid value")
+    current = "staging" if os.environ.get("MCP_ENV") == "staging" else "prod"
+    if mcp_env == current:
+        return RedirectResponse("/settings", status_code=303)
+    # Tokens are bound to the issuing server, so a switch invalidates the
+    # current Calendly session — clear it and let the user reconnect.
+    _set_env("MCP_ENV", mcp_env)
+    _clear_calendly_session()
+    return RedirectResponse(
+        f"/settings?ok=Switched+to+{mcp_env}+%E2%80%94+reconnect+Calendly",
+        status_code=303,
+    )
 
 
 # ── Calendly OAuth (web-based flow, callback on this same server) ─────────────

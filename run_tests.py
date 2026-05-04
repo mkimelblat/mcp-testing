@@ -23,7 +23,7 @@ import time
 
 from dotenv import load_dotenv
 
-from test_prompt import make_client, run_test, MODEL, MCP_SERVER_URL
+from test_prompt import make_client, run_test, MODEL, get_mcp_url
 from app import db
 
 load_dotenv()
@@ -85,7 +85,7 @@ async def main():
     separator("═")
     print(f"  Calendly MCP Workflow Tests")
     print(f"  Model : {args.model}")
-    print(f"  MCP   : {MCP_SERVER_URL}")
+    print(f"  MCP   : {get_mcp_url()}")
     print(f"  {len(selected)} test(s) × up to {args.runs} run(s) each")
     if any(t["mutates"] for t in selected) and args.runs > 1:
         print(f"  Note  : mutation tests capped at 1 run to avoid account pollution")

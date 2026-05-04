@@ -15,7 +15,7 @@ from typing import TypedDict
 
 import httpx
 
-MCP_SERVER_URL = "https://mcp.calendly.com"
+from test_prompt import get_mcp_url
 
 
 class OAuthEndpoints(TypedDict):
@@ -40,7 +40,7 @@ def pkce_pair() -> tuple[str, str]:
 def discover() -> OAuthEndpoints:
     """Discover Calendly's OAuth endpoints via MCP protected-resource metadata."""
     resource = httpx.get(
-        f"{MCP_SERVER_URL}/.well-known/oauth-protected-resource", timeout=10
+        f"{get_mcp_url()}/.well-known/oauth-protected-resource", timeout=10
     )
     resource.raise_for_status()
     meta = resource.json()

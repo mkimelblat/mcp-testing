@@ -15,7 +15,7 @@ import json
 import os
 from typing import Any, AsyncIterator
 
-from test_prompt import MCP_SERVER_URL, MODEL, make_client, run_test
+from test_prompt import MODEL, get_mcp_url, make_client, run_test
 
 from app import db
 
@@ -107,7 +107,7 @@ async def start_run(
         raise RunInProgressError(sorted(_active_runs))
 
     effective_model = model or MODEL
-    run_id = db.create_run(effective_model, MCP_SERVER_URL, runs_per_test)
+    run_id = db.create_run(effective_model, get_mcp_url(), runs_per_test)
     _active_runs.add(run_id)
 
     tests_by_id = {t["id"]: t for t in db.list_tests()}

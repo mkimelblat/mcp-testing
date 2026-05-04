@@ -26,8 +26,19 @@
         </header>
         <p class="muted">
             Required for any eval — the harness sends this token to
-            <code>mcp.calendly.com</code>. Connect via OAuth to mint one tied to
+            <code>{{ mcp_url|replace("https://", "") }}</code>. Connect via OAuth to mint one tied to
             your (or a dedicated eval) Calendly account.
+        </p>
+        <form method="post" action="/settings/mcp-env" class="settings-form">
+            <label for="mcp-env">Environment</label>
+            <select id="mcp-env" name="mcp_env">
+                <option value="prod"    {% if mcp_env == "prod"    %}selected{% endif %}>Production (mcp.calendly.com)</option>
+                <option value="staging" {% if mcp_env == "staging" %}selected{% endif %}>Staging (mcp.staging.calendly-internal.com)</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Switch</button>
+        </form>
+        <p class="muted" style="font-size:0.8rem;margin-top:-0.25rem;">
+            Switching disconnects the current Calendly session — tokens are tied to the issuing server.
         </p>
         {% set user = calendly_user() %}
         {% if user %}

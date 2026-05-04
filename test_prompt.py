@@ -37,7 +37,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MCP_SERVER_URL = "https://mcp.calendly.com"
+MCP_PROD_URL    = "https://mcp.calendly.com"
+MCP_STAGING_URL = "https://mcp.staging.calendly-internal.com"
+
+
+def get_mcp_url() -> str:
+    """Resolve the MCP server URL from MCP_ENV (`prod` or `staging`).
+    Read at call time so the Settings toggle takes effect without a restart."""
+    return MCP_STAGING_URL if os.environ.get("MCP_ENV") == "staging" else MCP_PROD_URL
+
+
 MODEL          = "gpt-5.1"
 # Judge uses a fixed OpenAI model regardless of the main model.
 # Rationale: (1) gpt-5.1 has a 500k input TPM cap, which isolates the
@@ -170,7 +179,7 @@ def _openai_mcp_config(token: str) -> dict:
     return {
         "type":             "mcp",
         "server_label":     "calendly",
-        "server_url":       MCP_SERVER_URL,
+        "server_url":       get_mcp_url(),
         "headers":          {"Authorization": f"Bearer {token}"},
         "require_approval": "never",
     }
@@ -227,7 +236,7 @@ async def _openai_judge(
 def _anthropic_mcp_config(token: str) -> dict:
     return {
         "type":                "url",
-        "url":                 MCP_SERVER_URL,
+        "url":                 get_mcp_url(),
         "name":                "calendly",
         "authorization_token": token,
     }
@@ -447,7 +456,7 @@ async def _cli_main():
         sys.exit(1)
 
     print(f"\nModel  : {args.model}")
-    print(f"MCP    : {MCP_SERVER_URL}")
+    print(f"MCP    : {get_mcp_url()}")
     print(f"Prompt : {args.prompt}")
     print(f"Expect : {args.expect}")
     print(f"Runs   : {args.runs}\n")
