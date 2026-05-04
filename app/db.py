@@ -186,6 +186,7 @@ CREATE TABLE IF NOT EXISTS tests (
     at_most_once  TEXT    NOT NULL DEFAULT '[]',
     max_seconds   REAL,
     mutates       INTEGER NOT NULL,
+    tags          TEXT    NOT NULL DEFAULT '[]',
     position      INTEGER NOT NULL,
     created_at    TEXT    NOT NULL,
     updated_at    TEXT    NOT NULL
@@ -241,6 +242,7 @@ _MIGRATIONS: dict[str, list[tuple[str, str]]] = {
     "tests": [
         ("at_most_once", "ALTER TABLE tests ADD COLUMN at_most_once TEXT NOT NULL DEFAULT '[]'"),
         ("max_seconds",  "ALTER TABLE tests ADD COLUMN max_seconds REAL"),
+        ("tags",         "ALTER TABLE tests ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"),
     ],
     "runs": [
         ("name", "ALTER TABLE runs ADD COLUMN name TEXT"),
@@ -287,15 +289,17 @@ def _seed_defaults(conn: sqlite3.Connection) -> None:
             json.dumps(t["must_call"]), json.dumps(t["must_not_call"]),
             json.dumps(t.get("at_most_once") or []),
             t.get("max_seconds"),
-            1 if t["mutates"] else 0, i, now, now,
+            1 if t["mutates"] else 0,
+            json.dumps(t.get("tags") or []),
+            i, now, now,
         )
         for i, t in enumerate(DEFAULT_TESTS)
     ]
     conn.executemany(
         """INSERT INTO tests
            (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
-            mutates, position, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            mutates, tags, position, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         rows,
     )
 
@@ -312,18 +316,57 @@ def _row_to_test(row: sqlite3.Row) -> dict[str, Any]:
         "at_most_once":  json.loads(row["at_most_once"]),
         "max_seconds":   row["max_seconds"],
         "mutates":       bool(row["mutates"]),
+        "tags":          json.loads(row["tags"]),
         "position":      row["position"],
         "created_at":    row["created_at"],
         "updated_at":    row["updated_at"],
     }
 
 
-def list_tests() -> list[dict[str, Any]]:
+_SORTABLE_TEST_COLUMNS = {"id", "mutates", "max_seconds", "tags"}
+
+
+def list_tests(
+    *,
+    sort: str | None = None,
+    order: str = "asc",
+    tag: str | None = None,
+) -> list[dict[str, Any]]:
+    direction = "DESC" if str(order).lower() == "desc" else "ASC"
+    if sort in _SORTABLE_TEST_COLUMNS and sort != "tags":
+        if sort == "max_seconds":
+            order_by = f"max_seconds IS NULL, max_seconds {direction}, id ASC"
+        else:
+            order_by = f"{sort} {direction}, id ASC"
+    else:
+        order_by = "position ASC, id ASC"
     with connect() as conn:
-        rows = conn.execute(
-            "SELECT * FROM tests ORDER BY position ASC, id ASC"
-        ).fetchall()
-    return [_row_to_test(r) for r in rows]
+        rows = conn.execute(f"SELECT * FROM tests ORDER BY {order_by}").fetchall()
+    tests = [_row_to_test(r) for r in rows]
+    if sort == "tags":
+        # Empty-tag rows go last regardless of direction; non-empty rows sort
+        # by joined-sorted-tags so multi-tag evals have a stable key.
+        with_tags = [t for t in tests if t["tags"]]
+        without   = [t for t in tests if not t["tags"]]
+        with_tags.sort(
+            key=lambda t: ",".join(sorted(t["tags"])).lower(),
+            reverse=(direction == "DESC"),
+        )
+        tests = with_tags + without
+    if tag:
+        tests = [t for t in tests if tag in t["tags"]]
+    return tests
+
+
+def list_all_tags() -> list[str]:
+    with connect() as conn:
+        rows = conn.execute("SELECT tags FROM tests").fetchall()
+    seen: set[str] = set()
+    for r in rows:
+        for t in json.loads(r["tags"]):
+            if t:
+                seen.add(t)
+    return sorted(seen)
 
 
 def get_test(test_id: str) -> dict[str, Any] | None:
@@ -341,8 +384,8 @@ def create_test(test: dict[str, Any]) -> None:
         conn.execute(
             """INSERT INTO tests
                (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
-                mutates, position, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                mutates, tags, position, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 test["id"], test["prompt"], test["expect"],
                 json.dumps(test.get("must_call") or []),
@@ -350,6 +393,7 @@ def create_test(test: dict[str, Any]) -> None:
                 json.dumps(test.get("at_most_once") or []),
                 test.get("max_seconds"),
                 1 if test.get("mutates") else 0,
+                json.dumps(test.get("tags") or []),
                 max_pos + 1, now, now,
             ),
         )
@@ -360,7 +404,8 @@ def update_test(test_id: str, test: dict[str, Any]) -> None:
         conn.execute(
             """UPDATE tests
                SET prompt = ?, expect = ?, must_call = ?, must_not_call = ?,
-                   at_most_once = ?, max_seconds = ?, mutates = ?, updated_at = ?
+                   at_most_once = ?, max_seconds = ?, mutates = ?, tags = ?,
+                   updated_at = ?
                WHERE id = ?""",
             (
                 test["prompt"], test["expect"],
@@ -369,6 +414,7 @@ def update_test(test_id: str, test: dict[str, Any]) -> None:
                 json.dumps(test.get("at_most_once") or []),
                 test.get("max_seconds"),
                 1 if test.get("mutates") else 0,
+                json.dumps(test.get("tags") or []),
                 now_iso(), test_id,
             ),
         )

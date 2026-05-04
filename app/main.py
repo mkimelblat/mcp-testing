@@ -287,12 +287,22 @@ def _clear_calendly_session() -> None:
 # ── Test list ─────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request) -> HTMLResponse:
+def index(
+    request: Request,
+    sort: str | None = None,
+    order: str = "asc",
+    tag: str | None = None,
+) -> HTMLResponse:
+    tag = (tag or "").strip() or None
     return templates.TemplateResponse(
         request,
         "index.html",
         {
-            "tests":          db.list_tests(),
+            "tests":          db.list_tests(sort=sort, order=order, tag=tag),
+            "all_tags":       db.list_all_tags(),
+            "sort":           sort,
+            "order":          order,
+            "tag":            tag,
             "model":          MODEL,
             "mcp_url":        MCP_SERVER_URL,
             "env_status":     _env_status(),
@@ -340,6 +350,7 @@ def test_create(
     at_most_once:  str  = Form(""),
     max_seconds:   str  = Form(""),
     mutates:       bool = Form(False),
+    tags:          str  = Form(""),
 ) -> RedirectResponse:
     if db.get_test(id) is not None:
         raise HTTPException(status_code=409, detail=f"Test id '{id}' already exists")
@@ -352,6 +363,7 @@ def test_create(
         "at_most_once":  _parse_tool_list(at_most_once),
         "max_seconds":   _parse_max_seconds(max_seconds),
         "mutates":       mutates,
+        "tags":          _parse_tool_list(tags),
     })
     return RedirectResponse("/", status_code=303)
 
@@ -377,6 +389,7 @@ def test_update(
     at_most_once:  str  = Form(""),
     max_seconds:   str  = Form(""),
     mutates:       bool = Form(False),
+    tags:          str  = Form(""),
 ) -> RedirectResponse:
     if db.get_test(test_id) is None:
         raise HTTPException(status_code=404, detail=f"Test '{test_id}' not found")
@@ -388,6 +401,7 @@ def test_update(
         "at_most_once":  _parse_tool_list(at_most_once),
         "max_seconds":   _parse_max_seconds(max_seconds),
         "mutates":       mutates,
+        "tags":          _parse_tool_list(tags),
     })
     return RedirectResponse("/", status_code=303)
 

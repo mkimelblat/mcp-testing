@@ -82,6 +82,13 @@
         </label>
     </div>
 
+    <label>
+        <span>Tags</span>
+        <textarea name="tags" rows="2"
+                  placeholder="scheduling, write_op">{% if test and test.tags %}{{ test.tags | join('\n') }}{% endif %}</textarea>
+        <small class="muted">One per line (or comma-separated). Used for filtering on the evals page.</small>
+    </label>
+
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">
             {% if mode == 'new' %}Create eval{% else %}Save changes{% endif %}

@@ -29,6 +29,13 @@
         <span class="muted">—</span>
         {% endif %}
     </td>
+    <td class="col-tags">
+        {% if t.tags %}
+            {% for tg in t.tags %}<span class="tag-chip">{{ tg }}</span>{% endfor %}
+        {% else %}
+        <span class="muted">—</span>
+        {% endif %}
+    </td>
     <td class="col-rw">
         {% if t.mutates %}<span class="pill pill-warn">write</span>{% else %}<span class="pill pill-ok">read</span>{% endif %}
     </td>

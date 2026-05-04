@@ -1,12 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Evals · Calendly MCP{% endblock %}
 
+{% macro sort_header(label, key) %}
+    {% set next_order = 'desc' if sort == key and order == 'asc' else 'asc' %}
+    {% set arrow = '▲' if sort == key and order == 'asc'
+                   else ('▼' if sort == key else '') %}
+    {% set qs = '?sort=' ~ key ~ '&order=' ~ next_order %}
+    {% if tag %}{% set qs = qs ~ '&tag=' ~ tag %}{% endif %}
+    <a class="sort-link{% if sort == key %} sort-link-active{% endif %}" href="{{ qs }}">
+        {{ label }}{% if arrow %} <span class="sort-arrow">{{ arrow }}</span>{% endif %}
+    </a>
+{% endmacro %}
+
 {% block content %}
 <section class="page-header">
     <div>
         <h1>Evals</h1>
         <p class="subtitle">
-            {{ tests|length }} eval{{ '' if tests|length == 1 else 's' }}
+            {{ tests|length }} eval{{ '' if tests|length == 1 else 's' }}{% if tag %} tagged <code>{{ tag }}</code>{% endif %}
             &middot; MCP <code>{{ mcp_url }}</code>
         </p>
     </div>
@@ -14,6 +25,13 @@
         <a href="/tests/new" class="btn btn-secondary">+ New eval</a>
     </div>
 </section>
+
+{% if all_tags %}
+<form id="filter-form" method="get" action="/">
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    {% if sort %}<input type="hidden" name="order" value="{{ order }}">{% endif %}
+</form>
+{% endif %}
 
 {% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}
 <div class="banner banner-warn">
@@ -50,6 +68,17 @@
             Runs per eval
             <input type="number" name="runs_per_test" value="5" min="1" max="50">
         </label>
+        {% if all_tags %}
+        <label>
+            Tag
+            <select form="filter-form" name="tag" onchange="this.form.submit()">
+                <option value="">All tags</option>
+                {% for t in all_tags %}
+                <option value="{{ t }}" {% if t == tag %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endif %}
         <button type="submit" class="btn btn-primary"
                 {% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}disabled{% endif %}>
             Run selected
@@ -60,11 +89,12 @@
         <thead>
             <tr>
                 <th class="col-check"><input type="checkbox" id="select-all"></th>
-                <th>ID</th>
+                <th>{{ sort_header('ID', 'id') }}</th>
                 <th>Prompt</th>
                 <th>Tool assertions</th>
-                <th class="col-rw">R/W</th>
-                <th class="col-runtime">Runtime</th>
+                <th class="col-tags">{{ sort_header('Tags', 'tags') }}</th>
+                <th class="col-rw">{{ sort_header('R/W', 'mutates') }}</th>
+                <th class="col-runtime">{{ sort_header('Runtime', 'max_seconds') }}</th>
                 <th class="col-actions"></th>
             </tr>
         </thead>
