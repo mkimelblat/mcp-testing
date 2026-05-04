@@ -35,18 +35,11 @@
             {% if query %}&middot; {{ results|length }} iteration{{ '' if results|length == 1 else 's' }} matching <code>{{ query }}</code>{% endif %}
         </p>
     </div>
-    {% if not is_live and groups %}
-    <div class="header-actions">
-        <form method="post" action="/runs">
-            {% for test_id, _ in groups %}
-            <input type="hidden" name="test_ids" value="{{ test_id }}">
-            {% endfor %}
-            <input type="hidden" name="runs_per_test" value="{{ run.runs_per_test }}">
-            <input type="hidden" name="model" value="{{ run.model }}">
-            <button type="submit" class="btn btn-primary">Re-run</button>
-        </form>
+    <div id="run-header-actions" class="header-actions">
+        {% if not is_live and groups %}
+        {% include "_run_header_actions.html" %}
+        {% endif %}
     </div>
-    {% endif %}
 </section>
 
 {# Single SSE connection shared by all three panes. Three sse-connect

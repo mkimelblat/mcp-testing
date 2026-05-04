@@ -1,0 +1,8 @@
+<form method="post" action="/runs">
+    {% for test_id, _ in groups %}
+    <input type="hidden" name="test_ids" value="{{ test_id }}">
+    {% endfor %}
+    <input type="hidden" name="runs_per_test" value="{{ run.runs_per_test }}">
+    <input type="hidden" name="model" value="{{ run.model }}">
+    <button type="submit" class="btn btn-primary">Re-run</button>
+</form>

@@ -606,14 +606,25 @@ async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
             elif etype == "complete":
                 status = event.get("status", "")
                 # OOB-swap the header status pill so it flips from "running"
-                # to its final state in place. Remaining payload is empty, so
-                # the #run-footer (sse-swap="complete", hx-swap="innerHTML")
-                # just clears its "Running..." message.
+                # to its final state in place, and OOB-swap the header
+                # actions container with the now-renderable Re-run form
+                # (the template hides it during live runs). The remaining
+                # payload is empty, so #run-footer just clears its
+                # "Running..." message via sse-swap="complete".
                 pill_oob = (
                     f'<span id="run-status" hx-swap-oob="true" '
                     f'class="pill pill-{status}">{status}</span>'
                 )
-                yield {"event": "complete", "data": pill_oob}
+                results = db.list_run_results(run_id)
+                groups  = _group_by_test(results)
+                actions_inner = templates.get_template(
+                    "_run_header_actions.html"
+                ).render({"groups": groups, "run": run})
+                actions_oob = (
+                    f'<div id="run-header-actions" class="header-actions" '
+                    f'hx-swap-oob="true">{actions_inner}</div>'
+                )
+                yield {"event": "complete", "data": pill_oob + actions_oob}
             elif etype == "error":
                 yield {"event": "error", "data": event.get("message", "")}
 
