@@ -722,8 +722,23 @@ def _oauth_redirect_uri(request: Request) -> str:
     return f"{base}/auth/calendly/callback"
 
 
+_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
 @app.get("/auth/calendly/start")
 def calendly_oauth_start(request: Request) -> RedirectResponse:
+    # Calendly's DCR endpoint enforces OAuth's loopback exception strictly:
+    # an http (non-https) redirect_uri is only accepted when the host is
+    # localhost / 127.0.0.1 / ::1. If the user opened the harness from a
+    # LAN IP, surface a clear message instead of the opaque DCR rejection.
+    if (request.url.hostname or "").lower() not in _LOOPBACK_HOSTS:
+        port = request.url.port or 8000
+        msg = quote_plus(
+            f"Open http://localhost:{port}/settings on the host machine "
+            f"to connect Calendly (OAuth requires a loopback redirect URI)."
+        )
+        return RedirectResponse(f"/settings?error={msg}", status_code=303)
+
     try:
         endpoints = calendly_oauth.discover()
     except Exception as e:
