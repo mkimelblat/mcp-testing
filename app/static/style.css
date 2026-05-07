@@ -502,3 +502,22 @@ textarea:focus {
     max-height: 12rem; overflow-y: auto;
 }
 .available-models li { margin-bottom: 0.15rem; }
+
+/* ── Fixture-result panel ──────────────────────────────────────────────── */
+#fixture-result { margin: 0.75rem 0; }
+.fixture-output {
+    margin-top: 0.5rem;
+    border: 1px solid #e5e5e5; border-radius: 6px;
+    background: #fafafa;
+    padding: 0.5rem 0.75rem;
+}
+.fixture-output summary { cursor: pointer; font-weight: 500; }
+.fixture-output pre {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem; line-height: 1.4;
+    white-space: pre-wrap; word-wrap: break-word;
+    max-height: 24rem; overflow-y: auto;
+}
+.htmx-indicator { display: none; margin-left: 0.35rem; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { display: inline; }

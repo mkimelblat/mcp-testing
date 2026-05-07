@@ -1,0 +1,11 @@
+{% if summary %}
+<div class="banner {% if ok %}banner-ok{% else %}banner-warn{% endif %}">
+    {{ summary }}
+</div>
+{% endif %}
+{% if output %}
+<details class="fixture-output" open>
+    <summary>Output</summary>
+    <pre>{{ output }}</pre>
+</details>
+{% endif %}

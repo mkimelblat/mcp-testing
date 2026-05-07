@@ -305,6 +305,7 @@ def index(
             "tag":            tag,
             "model":          MODEL,
             "mcp_url":        get_mcp_url(),
+            "mcp_env":        "staging" if os.environ.get("MCP_ENV") == "staging" else "prod",
             "env_status":     _env_status(),
             "model_options":  _model_options(),
         },
@@ -705,6 +706,57 @@ def settings_mcp_env(mcp_env: str = Form(...)) -> RedirectResponse:
     return RedirectResponse(
         f"/settings?ok=Switched+to+{mcp_env}+%E2%80%94+reconnect+Calendly",
         status_code=303,
+    )
+
+
+# ── Fixture management (staging only) ────────────────────────────────────────
+
+@app.post("/fixtures/reset-and-setup", response_class=HTMLResponse)
+def fixtures_reset_and_setup(request: Request) -> HTMLResponse:
+    """Run scripts/fixture_reset_staging.py followed by
+    scripts/fixture_setup_staging.py against the connected staging
+    account, capture combined stdout, and render the result."""
+    import subprocess
+
+    if os.environ.get("MCP_ENV") != "staging":
+        return templates.TemplateResponse(
+            request, "_fixture_result.html",
+            {"ok": False, "summary": "Fixtures only operate against staging. Switch MCP_ENV on /settings.",
+             "output": ""},
+        )
+    if not os.environ.get("CALENDLY_MCP_TOKEN"):
+        return templates.TemplateResponse(
+            request, "_fixture_result.html",
+            {"ok": False, "summary": "Calendly not connected — connect on /settings.",
+             "output": ""},
+        )
+
+    py = os.path.join(ROOT_DIR, ".venv", "bin", "python")
+    output_chunks: list[str] = []
+    last_step_ok = True
+    for script in ("fixture_reset_staging.py", "fixture_setup_staging.py"):
+        path = os.path.join(ROOT_DIR, "scripts", script)
+        proc = subprocess.run(
+            [py, path],
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        output_chunks.append(f"=== {script} (exit {proc.returncode}) ===\n{proc.stdout}")
+        if proc.stderr:
+            output_chunks.append(f"--- stderr ---\n{proc.stderr}")
+        if proc.returncode != 0:
+            last_step_ok = False
+            break
+
+    return templates.TemplateResponse(
+        request, "_fixture_result.html",
+        {
+            "ok":      last_step_ok,
+            "summary": "Reset + setup complete." if last_step_ok else "Fixture run failed — see output below.",
+            "output":  "\n\n".join(output_chunks),
+        },
     )
 
 

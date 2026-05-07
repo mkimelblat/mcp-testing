@@ -79,11 +79,25 @@
             </select>
         </label>
         {% endif %}
+        {% if mcp_env == "staging" %}
+        <button type="button" class="btn btn-secondary"
+                hx-post="/fixtures/reset-and-setup"
+                hx-target="#fixture-result"
+                hx-swap="innerHTML"
+                hx-disabled-elt="this"
+                hx-indicator="#fixture-spinner"
+                {% if not env_status.calendly %}disabled{% endif %}
+                title="Reset prior-run mutations, then re-establish baseline fixtures (Coffee Chat, cash0902 booking, etc.) on the staging account.">
+            Reset + setup fixtures
+            <span id="fixture-spinner" class="htmx-indicator">…</span>
+        </button>
+        {% endif %}
         <button type="submit" class="btn btn-primary"
                 {% if not env_status.calendly or (not env_status.openai and not env_status.anthropic) %}disabled{% endif %}>
             Run selected
         </button>
     </div>
+    <div id="fixture-result"></div>
 
     <table class="tests-table">
         <thead>
