@@ -7,7 +7,11 @@ What it does:
   1. Restore Coffee Chat availability rules from
      backups/coffee_chat_baseline_rules.json (eval #9 mutates these).
   2. Restore Coffee Chat duration to 30 minutes (eval #6 changes to 45).
-  3. Deactivate any "Intro Call" event type (eval #5 created it).
+  3. Archive any "Intro Call" event type — rename to '_archived Intro
+     Call <timestamp>' AND deactivate. Renaming matters: Calendly has
+     no delete endpoint, so just deactivating leaves the name in place
+     and the next run of eval #5 finds it via list_event_types and
+     correctly declines to create a duplicate.
   4. Cancel any active future meetings on Intro Call (eval #14).
   5. Revoke any pending invitation to newhire@calendly.com (eval #30) —
      requires org-admin permission, will skip with a warning otherwise.
@@ -166,24 +170,36 @@ def step2_restore_coffee_duration(user_uri: str) -> None:
         print(f"  ⚠ duration update failed: {e}")
 
 
-def step3_deactivate_intro_call(user_uri: str) -> None:
-    print("\nStep 3: Deactivate 'Intro Call' event type (created by eval #5)")
-    intro = find_event_type(user_uri, "Intro Call")
-    if not intro:
-        print("  ✓ no Intro Call to deactivate")
+def step3_archive_intro_call(user_uri: str) -> None:
+    """Rename + deactivate any 'Intro Call' event type. Renaming is essential:
+    Calendly has no delete endpoint, and the next run of eval #5 (which calls
+    list_event_types first per the tool's own docstring) would find the
+    deactivated 'Intro Call' and decline to create a duplicate. Renaming to
+    '_archived Intro Call <timestamp>' frees the name for a fresh creation."""
+    print("\nStep 3: Archive any 'Intro Call' event type (created by eval #5)")
+    ets = call("event_types-list_event_types", {"user": user_uri})
+    intros = [
+        et for et in ets.get("collection", [])
+        if (et.get("name") or "").strip().lower() == "intro call"
+    ]
+    if not intros:
+        print("  ✓ no 'Intro Call' to archive")
         return
-    if not intro.get("active", True):
-        print("  ✓ already inactive")
-        return
-    uuid = intro["uri"].split("/")[-1]
-    try:
-        call("event_types-update_event_type", {
-            "uuid": uuid,
-            "update_event_type_request": {"active": False},
-        })
-        print(f"  ✓ deactivated {intro['uri']}")
-    except MCPToolError as e:
-        print(f"  ⚠ deactivate failed: {e}")
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    for intro in intros:
+        uuid = intro["uri"].split("/")[-1]
+        new_name = f"_archived Intro Call {ts}"
+        try:
+            call("event_types-update_event_type", {
+                "uuid": uuid,
+                "update_event_type_request": {
+                    "name":   new_name,
+                    "active": False,
+                },
+            })
+            print(f"  ✓ renamed → {new_name!r} (deactivated): {intro['uri']}")
+        except MCPToolError as e:
+            print(f"  ⚠ archive failed for {intro['uri']}: {e}")
 
 
 def step4_cancel_intro_call_meetings(user_uri: str) -> None:
@@ -312,7 +328,7 @@ def main() -> None:
 
     step1_restore_coffee_rules(user_uri)
     step2_restore_coffee_duration(user_uri)
-    step3_deactivate_intro_call(user_uri)
+    step3_archive_intro_call(user_uri)
     step4_cancel_intro_call_meetings(user_uri)
     step5_revoke_newhire(org_uuid)
     step6_clear_fixture_invitee_no_show(user_uri)
