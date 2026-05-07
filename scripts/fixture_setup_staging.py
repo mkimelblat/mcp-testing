@@ -6,12 +6,18 @@ the resources each eval needs:
 
   1. Coffee Chat event type exists (one-on-one, 30 min, google_conference).
   2. Coffee Chat availability includes Thursday (so eval #9 is observable).
-  3. An upcoming Coffee Chat with aundreia.heisey@calendly.com.
-  4. A past Coffee Chat with Aundreia: MANUAL.
+  3. An upcoming Coffee Chat with FIXTURE_INVITEE_EMAIL.
+  4. A past Coffee Chat with the fixture invitee: MANUAL.
   5. A fixture removable team member: invited (manual accept in UI).
   6. A pending team invitation (target for eval #29).
   7. newhire@calendly.com NOT pre-invited (precondition for eval #30).
   8. Routing form submissions: MANUAL.
+
+The fixture invitee is intentionally a self-owned test address
+(cash0902@gmail.com / Michael Kimelblat) rather than the
+aundreia.heisey@calendly.com from the OpenAI submission doc, so
+re-running the suite doesn't flood a real Calendly user with booking
+confirmation emails.
 
 Run after switching the harness to staging and reconnecting OAuth.
 """
@@ -33,6 +39,13 @@ URL    = "https://mcp.staging.calendly-internal.com"
 TOKEN  = os.environ.get("CALENDLY_MCP_TOKEN")
 if not TOKEN:
     sys.exit("CALENDLY_MCP_TOKEN not set in .env")
+
+# Canonical fixture invitee for staging eval work. Using cash0902@gmail.com
+# (Mike's secondary test account, also a member of the staging org)
+# instead of aundreia.heisey@calendly.com to avoid spamming a real
+# Calendly user with booking confirmation emails on every suite run.
+FIXTURE_INVITEE_NAME  = "Michael Kimelblat"
+FIXTURE_INVITEE_EMAIL = "cash0902@gmail.com"
 
 HDR = {
     "Authorization": f"Bearer {TOKEN}",
@@ -194,14 +207,14 @@ def find_meeting_with_invitee(user_uri: str, name: str, email: str,
 
 
 def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None:
-    print("\nStep 3: Upcoming Coffee Chat with aundreia.heisey@calendly.com")
+    print(f"\nStep 3: Upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL}")
     now = utc_now()
     week = now + datetime.timedelta(days=7)
-    aundreia = "aundreia.heisey@calendly.com"
-    if find_meeting_with_invitee(user_uri, "Coffee Chat", aundreia, now, week):
-        print(f"  ✓ upcoming Coffee Chat with {aundreia} exists")
+    if find_meeting_with_invitee(user_uri, "Coffee Chat",
+                                 FIXTURE_INVITEE_EMAIL, now, week):
+        print(f"  ✓ upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} exists")
         return
-    print("  no upcoming Coffee Chat with Aundreia — finding a slot...")
+    print(f"  no upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} — finding a slot...")
     slots = call("event_types-list_event_type_available_times", {
         "event_type": coffee_uri,
         "start_time": iso_z(now + datetime.timedelta(hours=1)),
@@ -218,8 +231,8 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
             "event_type": coffee_uri,
             "start_time": slot["start_time"],
             "invitee": {
-                "name":     "Aundreia Heisey",
-                "email":    aundreia,
+                "name":     FIXTURE_INVITEE_NAME,
+                "email":    FIXTURE_INVITEE_EMAIL,
                 "timezone": user_tz,
             },
             "location": {"kind": "google_conference"},
@@ -229,15 +242,15 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
 
 
 def step4_past_meeting(user_uri: str) -> None:
-    print("\nStep 4: Past Coffee Chat with aundreia.heisey@calendly.com")
+    print(f"\nStep 4: Past Coffee Chat with {FIXTURE_INVITEE_EMAIL}")
     past_lo = utc_now() - datetime.timedelta(days=7)
     past_hi = utc_now()
     if find_meeting_with_invitee(user_uri, "Coffee Chat",
-                                 "aundreia.heisey@calendly.com", past_lo, past_hi):
-        print("  ✓ past Coffee Chat with Aundreia exists")
+                                 FIXTURE_INVITEE_EMAIL, past_lo, past_hi):
+        print(f"  ✓ past Coffee Chat with {FIXTURE_INVITEE_EMAIL} exists")
         return
     print("  ⚠ MANUAL SETUP NEEDED:")
-    print("    Book a Coffee Chat with aundreia.heisey@calendly.com starting ~5")
+    print(f"    Book a Coffee Chat with {FIXTURE_INVITEE_EMAIL} starting ~5")
     print("    minutes from now for 5-min duration. Wait at least 10 minutes")
     print("    after the start time so it counts as 'past' before running evals")
     print("    #16–#18 (mark_no_show / read_no_show / clear_no_show).")

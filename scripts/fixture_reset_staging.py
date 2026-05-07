@@ -11,12 +11,17 @@ What it does:
   4. Cancel any active future meetings on Intro Call (eval #14).
   5. Revoke any pending invitation to newhire@calendly.com (eval #30) —
      requires org-admin permission, will skip with a warning otherwise.
-  6. Clear the no-show flag from past Coffee Chats with Aundreia (eval
-     #16) — depends on whether the no-show evals were actually run.
+  6. Clear the no-show flag from past Coffee Chats with the fixture
+     invitee (cash0902@gmail.com — eval #16). Depends on whether the
+     no-show evals were actually run.
+  7. Cancel any active meetings with aundreia.heisey@calendly.com — we
+     migrated away from her as the fixture invitee, so any stragglers
+     get cleaned up so she doesn't keep getting Calendly reminders.
 
 What it does NOT do (deliberately):
-  - Cancel the upcoming or past Coffee Chats with Aundreia. Those are
-    fixture meetings — leave them so the next run can reuse them.
+  - Cancel the upcoming or past Coffee Chats with cash0902@gmail.com.
+    Those are fixture meetings — leave them so the next run can reuse
+    them.
   - Delete fixture members or pending invitations created by setup
     script — they're persistent fixtures.
 """
@@ -38,6 +43,9 @@ URL    = "https://mcp.staging.calendly-internal.com"
 TOKEN  = os.environ.get("CALENDLY_MCP_TOKEN")
 if not TOKEN:
     sys.exit("CALENDLY_MCP_TOKEN not set in .env")
+
+FIXTURE_INVITEE_EMAIL = "cash0902@gmail.com"
+LEGACY_INVITEE_EMAIL  = "aundreia.heisey@calendly.com"
 
 HDR = {
     "Authorization": f"Bearer {TOKEN}",
@@ -226,8 +234,8 @@ def step5_revoke_newhire(org_uuid: str) -> None:
             print(f"  ⚠ revoke failed: {e}")
 
 
-def step6_clear_aundreia_no_show(user_uri: str) -> None:
-    print("\nStep 6: Clear no-show flags on past Aundreia Coffee Chats")
+def step6_clear_fixture_invitee_no_show(user_uri: str) -> None:
+    print(f"\nStep 6: Clear no-show flags on past Coffee Chats with {FIXTURE_INVITEE_EMAIL}")
     past_lo = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=14)
     past_hi = datetime.datetime.now(datetime.UTC)
     events = call("meetings-list_events", {
@@ -244,7 +252,7 @@ def step6_clear_aundreia_no_show(user_uri: str) -> None:
         ev_uuid = e["uri"].split("/")[-1]
         invitees = call("meetings-list_event_invitees", {"uuid": ev_uuid})
         for inv in invitees.get("collection", []):
-            if inv.get("email") != "aundreia.heisey@calendly.com":
+            if inv.get("email") != FIXTURE_INVITEE_EMAIL:
                 continue
             inv_uuid = inv["uri"].split("/")[-1]
             try:
@@ -262,6 +270,37 @@ def step6_clear_aundreia_no_show(user_uri: str) -> None:
         print("  ✓ no no-show records to clear")
 
 
+def step7_cancel_legacy_aundreia(user_uri: str) -> None:
+    print(f"\nStep 7: Cancel any active meetings with the legacy invitee {LEGACY_INVITEE_EMAIL}")
+    now = datetime.datetime.now(datetime.UTC)
+    future = now + datetime.timedelta(days=14)
+    events = call("meetings-list_events", {
+        "user":           user_uri,
+        "min_start_time": now.isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "max_start_time": future.isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "status":         "active",
+        "count":          50,
+    })
+    canceled = 0
+    for e in events.get("collection", []):
+        ev_uuid = e["uri"].split("/")[-1]
+        invitees = call("meetings-list_event_invitees", {"uuid": ev_uuid})
+        if any(inv.get("email") == LEGACY_INVITEE_EMAIL for inv in invitees.get("collection", [])):
+            try:
+                call("meetings-cancel_event", {
+                    "uuid": ev_uuid,
+                    "create_scheduled_event_cancellation_request": {
+                        "reason": "Fixture cleanup — fixture invitee migrated to cash0902@gmail.com",
+                    },
+                })
+                canceled += 1
+                print(f"  ✓ canceled {e.get('name')} at {e.get('start_time')}")
+            except MCPToolError as err:
+                print(f"  ⚠ cancel failed: {err}")
+    if canceled == 0:
+        print(f"  ✓ no active meetings with {LEGACY_INVITEE_EMAIL}")
+
+
 def main() -> None:
     init_session()
     me = call("users-get_current_user")
@@ -276,7 +315,8 @@ def main() -> None:
     step3_deactivate_intro_call(user_uri)
     step4_cancel_intro_call_meetings(user_uri)
     step5_revoke_newhire(org_uuid)
-    step6_clear_aundreia_no_show(user_uri)
+    step6_clear_fixture_invitee_no_show(user_uri)
+    step7_cancel_legacy_aundreia(user_uri)
 
     print("\n=== Reset complete. ===")
 
