@@ -214,6 +214,21 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
                                  FIXTURE_INVITEE_EMAIL, now, week):
         print(f"  ✓ upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} exists")
         return
+
+    # Look up the Coffee Chat event type's actual configured locations.
+    # Hardcoding google_conference fails on accounts where the event type
+    # is configured with a different kind (zoom_conference, physical, etc.).
+    location_payload: dict | None = None
+    ets = call("event_types-list_event_types", {"user": user_uri})
+    for et in ets.get("collection", []):
+        if (et.get("name") or "").strip().lower() == "coffee chat":
+            for loc in et.get("locations") or []:
+                kind = loc.get("kind")
+                if kind:
+                    location_payload = {"kind": kind}
+                    break
+            break
+
     print(f"  no upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} — finding a slot...")
     slots = call("event_types-list_event_type_available_times", {
         "event_type": coffee_uri,
@@ -225,8 +240,9 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
         print("  ⚠ no available slots in the next 7 days. Cannot book.")
         return
     slot = slot_list[0]
-    print(f"  booking slot {slot['start_time']}...")
-    call("meetings-create_invitee", {
+    loc_str = location_payload["kind"] if location_payload else "(none configured on event type)"
+    print(f"  booking slot {slot['start_time']} (location: {loc_str})...")
+    args: dict = {
         "post_invitee_request": {
             "event_type": coffee_uri,
             "start_time": slot["start_time"],
@@ -235,9 +251,11 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
                 "email":    FIXTURE_INVITEE_EMAIL,
                 "timezone": user_tz,
             },
-            "location": {"kind": "google_conference"},
         }
-    })
+    }
+    if location_payload:
+        args["post_invitee_request"]["location"] = location_payload
+    call("meetings-create_invitee", args)
     print("  ✓ booked")
 
 
@@ -358,14 +376,16 @@ def step8_routing_forms() -> None:
 
 
 def step9_summarize_org_admin() -> None:
-    print("\nStep 9: Summary — org-admin permission gap")
-    print("  The 2FA Test account has org role=`user`, not `owner`. The Calendly")
-    print("  API enforces ownership for invitation create/revoke and member")
-    print("  removal. Evals #28 (remove_team_member), #30 (invite_team_member),")
-    print("  #31 (revoke_invitation) will return Permission Denied unless the")
-    print("  harness reconnects with an owner-role staging account (e.g. the")
-    print("  Mike Kimelblat staging owner at mike.kimelblat@calendly.com).")
-    print("  Eval #29 (list_pending_invitations) is read-only and will succeed.")
+    print("\nStep 9: Summary — org-admin gates (if invites/removes failed above)")
+    print("  Two distinct gates can block the org-admin tier (#28, #30, #31):")
+    print("    - role=user (not owner): the Calendly API rejects invitation")
+    print("      create/revoke and member removal with Permission Denied.")
+    print("    - seat allotment exhausted: even owners get Permission Denied")
+    print("      with a 'purchase more seats' message when the org has no")
+    print("      free seats to invite into.")
+    print("  See per-step error messages above for the specific cause on this")
+    print("  account. Eval #29 (list_pending_invitations) is read-only and")
+    print("  succeeds regardless of role.")
 
 
 def main() -> None:
