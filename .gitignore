@@ -14,6 +14,12 @@ __pycache__/
 mcp_testing.db
 mcp_testing.db-journal
 
+# Account-specific fixture state captured by setup script — not useful
+# across different Calendly accounts.
+backups/coffee_chat_baseline_rules.json
+backups/fixture_state_*.json
+data.db
+
 # OS / editor
 .DS_Store
 .vscode/
