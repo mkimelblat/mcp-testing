@@ -81,7 +81,7 @@ def _startup() -> None:
     _refresh_available_models()
 
 
-OPENAI_PRESET    = ["gpt-5.4", "gpt-5.3", "gpt-5.2", "gpt-5.1", "gpt-5",
+OPENAI_PRESET    = ["gpt-5.5", "gpt-5.4", "gpt-5.3", "gpt-5.2", "gpt-5.1", "gpt-5",
                     "gpt-5-mini", "gpt-4.1", "gpt-4o", "gpt-4o-mini"]
 ANTHROPIC_PRESET = ["claude-opus-4-7", "claude-sonnet-4-6",
                     "claude-haiku-4-5-20251001"]
