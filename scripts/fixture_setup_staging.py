@@ -199,8 +199,7 @@ def find_meeting_with_invitee(user_uri: str, name: str, email: str,
     for e in events.get("collection", []):
         if e.get("name") != name:
             continue
-        ev_uuid = e["uri"].split("/")[-1]
-        invitees = call("meetings-list_event_invitees", {"uuid": ev_uuid})
+        invitees = call("meetings-list_event_invitees", {"uri": e["uri"]})
         if any(inv.get("email") == email for inv in invitees.get("collection", [])):
             return True
     return False
@@ -274,11 +273,11 @@ def step4_past_meeting(user_uri: str) -> None:
     print("    #16–#18 (mark_no_show / read_no_show / clear_no_show).")
 
 
-def step5_removable_member(org_uuid: str, org_uri: str) -> None:
+def step5_removable_member(org_uri: str) -> None:
     print("\nStep 5: Fixture removable team member (target for eval #28)")
     try:
         pending = call("organizations-list_organization_invitations",
-                       {"uuid": org_uuid, "status": "pending"})
+                       {"uri": org_uri, "status": "pending"})
         mems = call("organizations-list_organization_memberships",
                     {"organization": org_uri})
     except MCPToolError as e:
@@ -305,7 +304,7 @@ def step5_removable_member(org_uuid: str, org_uri: str) -> None:
     print(f"  inviting {email}...")
     try:
         call("organizations-create_organization_invitation", {
-            "uuid": org_uuid,
+            "uri": org_uri,
             "create_organization_invitation_request": {"email": email},
         })
         print(f"  ✓ invited; ⚠ accept the invitation in the staging UI before running eval #28")
@@ -315,11 +314,11 @@ def step5_removable_member(org_uuid: str, org_uri: str) -> None:
         print("    #28–#31 will not run cleanly without reconnecting as an owner.")
 
 
-def step6_pending_invitation(org_uuid: str) -> None:
+def step6_pending_invitation(org_uri: str) -> None:
     print("\nStep 6: A pending team invitation (target for eval #29)")
     try:
         pending = call("organizations-list_organization_invitations",
-                       {"uuid": org_uuid, "status": "pending"})
+                       {"uri": org_uri, "status": "pending"})
     except MCPToolError as e:
         print(f"  ⚠ list failed: {e}")
         return
@@ -332,7 +331,7 @@ def step6_pending_invitation(org_uuid: str) -> None:
     print(f"  inviting {email}...")
     try:
         call("organizations-create_organization_invitation", {
-            "uuid": org_uuid,
+            "uri": org_uri,
             "create_organization_invitation_request": {"email": email},
         })
         print("  ✓ invited (will appear in pending invitations list)")
@@ -340,11 +339,11 @@ def step6_pending_invitation(org_uuid: str) -> None:
         print(f"  ⚠ invite failed: {e}")
 
 
-def step7_no_newhire(org_uuid: str) -> None:
+def step7_no_newhire(org_uri: str) -> None:
     print("\nStep 7: newhire@calendly.com NOT pre-invited (precondition for eval #30)")
     try:
         pending = call("organizations-list_organization_invitations",
-                       {"uuid": org_uuid, "status": "pending", "email": "newhire@calendly.com"})
+                       {"uri": org_uri, "status": "pending", "email": "newhire@calendly.com"})
     except MCPToolError as e:
         print(f"  ⚠ list failed: {e}")
         return
@@ -353,12 +352,12 @@ def step7_no_newhire(org_uuid: str) -> None:
         print("  ✓ no pre-existing newhire invitation")
         return
     for i in coll:
-        inv_uuid = i["uri"].split("/")[-1]
-        print(f"  revoking stale newhire invitation {inv_uuid}...")
+        inv_uri = i["uri"]
+        print(f"  revoking stale newhire invitation {inv_uri}...")
         try:
             call("organizations-revoke_organization_invitation", {
-                "org_uuid": org_uuid,
-                "uuid":     inv_uuid,
+                "org_uri": org_uri,
+                "uri":     inv_uri,
             })
         except MCPToolError as e:
             print(f"  ⚠ revoke failed: {e}")
@@ -393,7 +392,6 @@ def main() -> None:
     me = call("users-get_current_user")
     user_uri = me["resource"]["uri"]
     org_uri  = me["resource"]["current_organization"]
-    org_uuid = org_uri.split("/")[-1]
     user_tz  = me["resource"]["timezone"]
     print(f"Identity: {me['resource']['name']} <{me['resource']['email']}>")
     print(f"  user_uri: {user_uri}")
@@ -404,9 +402,9 @@ def main() -> None:
     step2_availability(coffee_uri)
     step3_upcoming_meeting(user_uri, coffee_uri, user_tz)
     step4_past_meeting(user_uri)
-    step5_removable_member(org_uuid, org_uri)
-    step6_pending_invitation(org_uuid)
-    step7_no_newhire(org_uuid)
+    step5_removable_member(org_uri)
+    step6_pending_invitation(org_uri)
+    step7_no_newhire(org_uri)
     step8_routing_forms()
     step9_summarize_org_admin()
 

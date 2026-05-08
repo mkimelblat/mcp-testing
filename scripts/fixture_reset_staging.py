@@ -159,10 +159,9 @@ def step2_restore_coffee_duration(user_uri: str) -> None:
     if coffee.get("duration") == 30:
         print("  ✓ already 30 min")
         return
-    uuid = coffee["uri"].split("/")[-1]
     try:
         call("event_types-update_event_type", {
-            "uuid": uuid,
+            "uri": coffee["uri"],
             "update_event_type_request": {"duration": 30},
         })
         print(f"  ✓ duration restored from {coffee.get('duration')} to 30 min")
@@ -187,11 +186,10 @@ def step3_archive_intro_call(user_uri: str) -> None:
         return
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     for intro in intros:
-        uuid = intro["uri"].split("/")[-1]
         new_name = f"_archived Intro Call {ts}"
         try:
             call("event_types-update_event_type", {
-                "uuid": uuid,
+                "uri": intro["uri"],
                 "update_event_type_request": {
                     "name":   new_name,
                     "active": False,
@@ -218,19 +216,18 @@ def step4_cancel_intro_call_meetings(user_uri: str) -> None:
         print("  ✓ no active Intro Call meetings")
         return
     for e in intros:
-        ev_uuid = e["uri"].split("/")[-1]
         try:
-            call("meetings-cancel_event", {"uuid": ev_uuid})
+            call("meetings-cancel_event", {"uri": e["uri"]})
             print(f"  ✓ canceled {e['uri']}")
         except MCPToolError as err:
             print(f"  ⚠ cancel failed for {e['uri']}: {err}")
 
 
-def step5_revoke_newhire(org_uuid: str) -> None:
+def step5_revoke_newhire(org_uri: str) -> None:
     print("\nStep 5: Revoke any pending newhire@calendly.com invitation")
     try:
         pending = call("organizations-list_organization_invitations", {
-            "uuid": org_uuid, "status": "pending", "email": "newhire@calendly.com",
+            "uri": org_uri, "status": "pending", "email": "newhire@calendly.com",
         })
     except MCPToolError as e:
         print(f"  ⚠ list failed: {e}")
@@ -240,12 +237,11 @@ def step5_revoke_newhire(org_uuid: str) -> None:
         print("  ✓ no pending newhire invitation")
         return
     for i in coll:
-        inv_uuid = i["uri"].split("/")[-1]
         try:
             call("organizations-revoke_organization_invitation", {
-                "org_uuid": org_uuid, "uuid": inv_uuid,
+                "org_uri": org_uri, "uri": i["uri"],
             })
-            print(f"  ✓ revoked {inv_uuid}")
+            print(f"  ✓ revoked {i['uri']}")
         except MCPToolError as e:
             print(f"  ⚠ revoke failed: {e}")
 
@@ -265,21 +261,19 @@ def step6_clear_fixture_invitee_no_show(user_uri: str) -> None:
     for e in events.get("collection", []):
         if e.get("name") != "Coffee Chat":
             continue
-        ev_uuid = e["uri"].split("/")[-1]
-        invitees = call("meetings-list_event_invitees", {"uuid": ev_uuid})
+        invitees = call("meetings-list_event_invitees", {"uri": e["uri"]})
         for inv in invitees.get("collection", []):
             if inv.get("email") != FIXTURE_INVITEE_EMAIL:
                 continue
-            inv_uuid = inv["uri"].split("/")[-1]
             try:
                 # Only delete if a no-show record exists.
-                call("meetings-get_invitee_no_show", {"uuid": inv_uuid})
+                call("meetings-get_invitee_no_show", {"uri": inv["uri"]})
             except MCPToolError:
                 continue  # 404 → no record, nothing to clear
             try:
-                call("meetings-delete_invitee_no_show", {"uuid": inv_uuid})
+                call("meetings-delete_invitee_no_show", {"uri": inv["uri"]})
                 cleared += 1
-                print(f"  ✓ cleared no-show on invitee {inv_uuid}")
+                print(f"  ✓ cleared no-show on invitee {inv['uri']}")
             except MCPToolError as err:
                 print(f"  ⚠ clear failed: {err}")
     if cleared == 0:
@@ -299,12 +293,11 @@ def step7_cancel_legacy_aundreia(user_uri: str) -> None:
     })
     canceled = 0
     for e in events.get("collection", []):
-        ev_uuid = e["uri"].split("/")[-1]
-        invitees = call("meetings-list_event_invitees", {"uuid": ev_uuid})
+        invitees = call("meetings-list_event_invitees", {"uri": e["uri"]})
         if any(inv.get("email") == LEGACY_INVITEE_EMAIL for inv in invitees.get("collection", [])):
             try:
                 call("meetings-cancel_event", {
-                    "uuid": ev_uuid,
+                    "uri": e["uri"],
                     "create_scheduled_event_cancellation_request": {
                         "reason": "Fixture cleanup — fixture invitee migrated to cash0902@gmail.com",
                     },
@@ -322,7 +315,6 @@ def main() -> None:
     me = call("users-get_current_user")
     user_uri = me["resource"]["uri"]
     org_uri  = me["resource"]["current_organization"]
-    org_uuid = org_uri.split("/")[-1]
     print(f"Identity: {me['resource']['name']} <{me['resource']['email']}>")
     print()
 
@@ -330,7 +322,7 @@ def main() -> None:
     step2_restore_coffee_duration(user_uri)
     step3_archive_intro_call(user_uri)
     step4_cancel_intro_call_meetings(user_uri)
-    step5_revoke_newhire(org_uuid)
+    step5_revoke_newhire(org_uri)
     step6_clear_fixture_invitee_no_show(user_uri)
     step7_cancel_legacy_aundreia(user_uri)
 
