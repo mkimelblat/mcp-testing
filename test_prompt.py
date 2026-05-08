@@ -47,7 +47,7 @@ def get_mcp_url() -> str:
     return MCP_STAGING_URL if os.environ.get("MCP_ENV") == "staging" else MCP_PROD_URL
 
 
-MODEL          = "gpt-5.4"
+MODEL          = "gpt-5.5"
 # Judge uses a fixed OpenAI model regardless of the main model.
 # Rationale: (1) gpt-5.1 has a 500k input TPM cap, which isolates the
 # judge from whichever bucket the main model is hitting (sonnet-4-6,
