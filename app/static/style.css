@@ -218,12 +218,13 @@ code {
 
 /* ── Run bar ───────────────────────────────────────────────────────────── */
 .run-bar {
-    display: flex; align-items: center; gap: 1.5rem;
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 1rem;
     margin-bottom: 1rem; padding: 0.75rem 1rem;
     background: white; border: 1px solid #e5e5e5; border-radius: 6px;
 }
-.run-bar label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-.run-bar button { margin-left: auto; }
+.run-bar label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; white-space: nowrap; }
+.run-bar > button { margin-left: auto; }
+.run-bar > button + button { margin-left: 0; }
 
 /* ── Forms ─────────────────────────────────────────────────────────────── */
 /* Base form controls — keep inputs/selects/textareas visually consistent
@@ -268,7 +269,7 @@ textarea:focus {
     box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
 }
 .run-bar input[type="number"] { width: 4.5rem; }
-.run-bar select { width: 12rem; text-overflow: ellipsis; }
+.run-bar select { width: 10rem; text-overflow: ellipsis; }
 
 .test-form {
     background: white; border: 1px solid #e5e5e5; border-radius: 6px;

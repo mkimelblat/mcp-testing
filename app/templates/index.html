@@ -66,13 +66,13 @@
         </label>
         <label>
             Runs per eval
-            <input type="number" name="runs_per_test" value="5" min="1" max="50">
+            <input type="number" name="runs_per_test" value="1" min="1" max="50">
         </label>
         <label>
-            Judge against
+            Judge
             <select name="judge_mode">
-                <option value="criteria" selected>Criteria (rubric)</option>
-                <option value="exemplar">Exemplar (reference response)</option>
+                <option value="criteria" selected>Criteria</option>
+                <option value="exemplar">Exemplar</option>
             </select>
         </label>
         {% if all_tags %}
@@ -95,7 +95,7 @@
                 hx-indicator="#fixture-spinner"
                 {% if not env_status.calendly %}disabled{% endif %}
                 title="Reset prior-run mutations, then re-establish baseline fixtures (Coffee Chat, cash0902 booking, etc.) on the staging account.">
-            Reset + setup fixtures
+            Reset fixtures
             <span id="fixture-spinner" class="htmx-indicator">…</span>
         </button>
         {% endif %}
