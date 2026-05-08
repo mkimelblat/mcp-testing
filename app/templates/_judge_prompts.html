@@ -1,0 +1,54 @@
+<div class="judge-prompts-panel">
+    <header class="judge-prompts-header">
+        <h3>How the judge grades</h3>
+        <p class="muted">
+            Sent to the OpenAI judge
+            <code>{{ judge_model }}</code>, pinned, <code>temperature=0</code>
+            for non-reasoning models. The actual <code>criteria</code> /
+            <code>exemplar</code> text comes from the eval row.
+        </p>
+        <button type="button" class="btn btn-secondary btn-small"
+                hx-on:click="document.getElementById('judge-prompts-panel').innerHTML=''">
+            Close
+        </button>
+    </header>
+
+    <div class="judge-prompts-grid">
+        <section class="judge-prompts-mode">
+            <h4>Criteria mode <span class="muted">(default)</span></h4>
+            <p class="muted">
+                Judge grades the response against the abstract <code>criteria</code> rubric.
+            </p>
+
+            <h5>System prompt</h5>
+            <pre>{{ criteria_system }}</pre>
+
+            <h5>User message template</h5>
+            <pre>Criterion: &lt;eval's `criteria` field&gt;
+
+Tools called: &lt;comma-separated tool names&gt;
+
+Response:
+&lt;the model's full response text&gt;</pre>
+        </section>
+
+        <section class="judge-prompts-mode">
+            <h4>Exemplar mode</h4>
+            <p class="muted">
+                Judge grades the response for substantive equivalence with the
+                concrete <code>exemplar</code> reference response.
+            </p>
+
+            <h5>System prompt</h5>
+            <pre>{{ exemplar_system }}</pre>
+
+            <h5>User message template</h5>
+            <pre>Reference Response: &lt;eval's `exemplar` field&gt;
+
+Tools called: &lt;comma-separated tool names&gt;
+
+Actual Response:
+&lt;the model's full response text&gt;</pre>
+        </section>
+    </div>
+</div>

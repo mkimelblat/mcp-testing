@@ -38,6 +38,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app import calendly_oauth, db, provider_models, runner
 from test_prompt import MODEL, get_mcp_url
+import test_prompt
 
 load_dotenv()
 
@@ -765,6 +766,23 @@ def fixtures_reset_and_setup(request: Request) -> HTMLResponse:
             "ok":      last_step_ok,
             "summary": "Reset + setup complete." if last_step_ok else "Fixture run failed — see output below.",
             "output":  "\n\n".join(output_chunks),
+        },
+    )
+
+
+# ── Judge prompt transparency ────────────────────────────────────────────────
+
+@app.get("/judge-prompts", response_class=HTMLResponse)
+def judge_prompts_panel(request: Request) -> HTMLResponse:
+    """Render the read-only panel showing both judge system prompts (criteria
+    + exemplar mode) plus their user-message templates. Reads the prompts
+    directly from `test_prompt` so there's no risk of UI / source drift."""
+    return templates.TemplateResponse(
+        request, "_judge_prompts.html",
+        {
+            "criteria_system":  test_prompt._JUDGE_SYSTEM_PROMPT,
+            "exemplar_system":  test_prompt._JUDGE_SYSTEM_PROMPT_EXEMPLAR,
+            "judge_model":      test_prompt.JUDGE_MODEL,
         },
     )
 

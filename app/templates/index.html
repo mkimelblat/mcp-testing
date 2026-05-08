@@ -74,6 +74,11 @@
                 <option value="criteria" selected>Criteria</option>
                 <option value="exemplar">Exemplar</option>
             </select>
+            <button type="button" class="btn-icon"
+                    hx-get="/judge-prompts"
+                    hx-target="#judge-prompts-panel"
+                    hx-swap="innerHTML"
+                    title="Show the actual prompts sent to the LLM judge">ⓘ</button>
         </label>
         {% if all_tags %}
         <label>
@@ -105,6 +110,7 @@
         </button>
     </div>
     <div id="fixture-result"></div>
+    <div id="judge-prompts-panel"></div>
 
     <table class="tests-table">
         <thead>

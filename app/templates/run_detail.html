@@ -29,6 +29,11 @@
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
             {% if run.judge_mode == "exemplar" %}<span class="pill pill-exemplar" title="Judge graded responses against the exemplar reference">exemplar</span>{% endif %}
+            <button type="button" class="btn-icon"
+                    hx-get="/judge-prompts"
+                    hx-target="#judge-prompts-panel"
+                    hx-swap="innerHTML"
+                    title="Show the actual prompts sent to the LLM judge">ⓘ</button>
             &middot; model <code>{{ run.model }}</code>
             &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per eval
             &middot; started <time class="local-time" datetime="{{ run.started_at }}">{{ run.started_at }}</time>
@@ -42,6 +47,8 @@
         {% endif %}
     </div>
 </section>
+
+<div id="judge-prompts-panel"></div>
 
 {# Single SSE connection shared by all three panes. Three sse-connect
    elements would open three EventSources; each auto-reconnects on close,
