@@ -1,9 +1,6 @@
-{% set _excluded_by_default = t.tags and ('refusal' in t.tags or 'hygiene' in t.tags) %}
 <tr class="test-row">
     <td class="col-check">
-        <input type="checkbox" name="test_ids" value="{{ t.id }}"
-               data-default-excluded="{{ '1' if _excluded_by_default else '0' }}"
-               {% if _excluded_by_default %}title="Excluded from 'select all' — manually check to include in a run"{% endif %}>
+        <input type="checkbox" name="test_ids" value="{{ t.id }}">
     </td>
     <td class="col-id">
         <a href="/tests/{{ t.id }}/edit">{{ t.id }}</a>

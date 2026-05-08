@@ -134,16 +134,8 @@
 </form>
 
 <script>
-  // Select-all skips evals tagged refusal/hygiene by default. They're
-  // still in the table and individually checkable, but the bulk toggle
-  // reflects the more common workflow (run the functional suite, not
-  // the negative-space evals that gate the model from doing the wrong
-  // thing).
   document.getElementById('select-all').addEventListener('change', (e) => {
-      document.querySelectorAll('input[name="test_ids"]').forEach(cb => {
-          if (cb.dataset.defaultExcluded === '1') return;
-          cb.checked = e.target.checked;
-      });
+      document.querySelectorAll('input[name="test_ids"]').forEach(cb => cb.checked = e.target.checked);
   });
 </script>
 {% endblock %}
