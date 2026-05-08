@@ -1,11 +1,11 @@
 """
 Bulk-replace the `tests` table with the v4 eval set defined in
-/tmp/evals_v4.csv. Idempotent: a backup snapshot already lives in
+scripts/evals_v4.csv. Idempotent: a backup snapshot lives in
 backups/tests_pre_v4_*.json.
 
-CSV columns: num, eval_id, tier, tags, prompt, expect, must_call,
-must_not_call, at_most_once, mutates. List-valued fields use ';' as
-separator.
+CSV columns: num, eval_id, tier, tags, prompt, criteria, exemplar,
+must_call, must_not_call, at_most_once, mutates. List-valued fields
+use ';' as separator.
 """
 from __future__ import annotations
 
@@ -31,7 +31,8 @@ def main() -> None:
             rows.append({
                 "id":            row["eval_id"],
                 "prompt":        row["prompt"],
-                "expect":        row["expect"],
+                "criteria":      row["criteria"],
+                "exemplar":      row["exemplar"] or None,
                 "must_call":     json.dumps(split_list(row["must_call"])),
                 "must_not_call": json.dumps(split_list(row["must_not_call"])),
                 "at_most_once":  json.dumps(split_list(row["at_most_once"])),
@@ -43,7 +44,7 @@ def main() -> None:
     if len(rows) != 39:
         sys.exit(f"Expected 39 rows in CSV, got {len(rows)}")
 
-    now = datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    now = datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
     con = sqlite3.connect(DB_PATH)
     try:
         con.execute("BEGIN")
@@ -51,11 +52,13 @@ def main() -> None:
         con.executemany(
             """
             INSERT INTO tests (
-                id, prompt, expect, must_call, must_not_call,
+                id, prompt, criteria, exemplar,
+                must_call, must_not_call,
                 mutates, position, created_at, updated_at,
                 at_most_once, max_seconds, tags
             ) VALUES (
-                :id, :prompt, :expect, :must_call, :must_not_call,
+                :id, :prompt, :criteria, :exemplar,
+                :must_call, :must_not_call,
                 :mutates, :position, :created_at, :updated_at,
                 :at_most_once, NULL, :tags
             )

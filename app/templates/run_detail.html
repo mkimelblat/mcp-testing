@@ -28,6 +28,7 @@
         </h1>
         <p class="subtitle">
             <span id="run-status" class="pill pill-{{ run.status }}">{{ run.status }}</span>
+            {% if run.judge_mode == "exemplar" %}<span class="pill pill-exemplar" title="Judge graded responses against the exemplar reference">exemplar</span>{% endif %}
             &middot; model <code>{{ run.model }}</code>
             &middot; {{ run.runs_per_test }} run{{ '' if run.runs_per_test == 1 else 's' }} per eval
             &middot; started <time class="local-time" datetime="{{ run.started_at }}">{{ run.started_at }}</time>

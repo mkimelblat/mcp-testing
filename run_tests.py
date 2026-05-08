@@ -105,7 +105,8 @@ async def main():
         effective_runs = 1 if test["mutates"] else args.runs
         result = await run_test(
             prompt=test["prompt"],
-            expect=test["expect"],
+            criteria=test["criteria"],
+            exemplar=test.get("exemplar"),
             runs=effective_runs,
             token=token,
             client=client,

@@ -27,7 +27,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "update_event_type_details",
         "prompt":  "Update my Coffee Chat event type to 45 minutes and switch the location to Zoom",
-        "expect":  (
+        "criteria":  (
             "Response confirms that the Coffee Chat event type is now 45 minutes long "
             "and that its location is now Zoom, such that a user would trust the change "
             "was actually made. Does not refuse, ask which Calendly account to use, "
@@ -42,7 +42,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "update_event_type_availability",
         "prompt":  "Remove Thursdays as available days from my Coffee Chat event type",
-        "expect":  (
+        "criteria":  (
             "Response confirms that Thursdays is no longer a bookable day on the Coffee Chat "
             "event type, such that a user would trust the change was actually made. "
             "Does not fail with a schema error, ask the user to paste the raw schedule "
@@ -57,7 +57,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "find_available_slots",
         "prompt":  "Find open slots for my Coffee Chat event type next week",
-        "expect":  (
+        "criteria":  (
             "Response identifies the Coffee Chat event type and provides next-week "
             "availability grounded in real data — either as a time window + frequency "
             "or as enumerated slots — in a form a user could act on. States a timezone "
@@ -79,7 +79,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "get_scheduling_link",
         "prompt":  "Get me the scheduling link for my Coffee Chat event type",
-        "expect":  (
+        "criteria":  (
             "Response provides exactly one direct scheduling URL (containing "
             "'calendly.com') for the Coffee Chat event type — a link the user could "
             "paste into an email and have a recipient book with. Does not return "
@@ -95,7 +95,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "get_rescheduling_link",
         "prompt":  "What is the rescheduling link for my next upcoming Coffee Chat meeting?",
-        "expect":  (
+        "criteria":  (
             "Response either provides a working rescheduling link for the identified "
             "upcoming Coffee Chat meeting (with enough context — meeting time, invitee — "
             "that the user knows which meeting it is for), OR clearly states there are "
@@ -111,7 +111,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "cancel_meeting",
         "prompt":  "Cancel my next upcoming Coffee Chat meeting",
-        "expect":  (
+        "criteria":  (
             "Response identifies a specific upcoming Coffee Chat meeting by name, time, "
             "and/or invitee before cancelling — so the user knows which meeting was "
             "cancelled. Acceptable variants: confirms the cancellation with those "
@@ -128,7 +128,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "create_single_use_link",
         "prompt":  "Create a single-use scheduling link for my Coffee Chat event type with a 15 min duration",
-        "expect":  (
+        "criteria":  (
             "Response provides a single-use (one-time) scheduling link containing "
             "'calendly.com' tied to the Coffee Chat event type — the kind of link that "
             "expires after one booking. Does not return the reusable event-type "
@@ -143,7 +143,7 @@ DEFAULT_TESTS: list[dict[str, Any]] = [
     {
         "id":      "book_meeting",
         "prompt":  "Book a meeting with test-automation@example.com using my Coffee Chat event type for the next available slot",
-        "expect":  (
+        "criteria":  (
             "Response does ONE of the following cleanly: "
             "(a) confirms a Coffee Chat booking was created on the calendar for "
             "test-automation@example.com at a specific time, treating the connected "
@@ -180,7 +180,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS tests (
     id            TEXT    PRIMARY KEY,
     prompt        TEXT    NOT NULL,
-    expect        TEXT    NOT NULL,
+    criteria      TEXT    NOT NULL,
+    exemplar      TEXT,
     must_call     TEXT    NOT NULL,
     must_not_call TEXT    NOT NULL,
     at_most_once  TEXT    NOT NULL DEFAULT '[]',
@@ -200,7 +201,8 @@ CREATE TABLE IF NOT EXISTS runs (
     model          TEXT    NOT NULL,
     mcp_url        TEXT    NOT NULL,
     runs_per_test  INTEGER NOT NULL,
-    name           TEXT
+    name           TEXT,
+    judge_mode     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS run_results (
@@ -208,7 +210,8 @@ CREATE TABLE IF NOT EXISTS run_results (
     run_id              INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
     test_id             TEXT    NOT NULL,
     test_prompt         TEXT    NOT NULL,
-    test_expect         TEXT    NOT NULL,
+    test_criteria       TEXT    NOT NULL,
+    test_exemplar       TEXT,
     test_must_call      TEXT    NOT NULL DEFAULT '[]',
     test_must_not_call  TEXT    NOT NULL DEFAULT '[]',
     test_at_most_once   TEXT    NOT NULL DEFAULT '[]',
@@ -243,9 +246,18 @@ _MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("at_most_once", "ALTER TABLE tests ADD COLUMN at_most_once TEXT NOT NULL DEFAULT '[]'"),
         ("max_seconds",  "ALTER TABLE tests ADD COLUMN max_seconds REAL"),
         ("tags",         "ALTER TABLE tests ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"),
+        # Rename `expect` → `criteria` and add a paired `exemplar` column.
+        # Existing rows carry their text verbatim into `criteria`; `exemplar`
+        # starts NULL until populated (e.g. by migrate_evals_v4.py from CSV).
+        ("criteria",     "ALTER TABLE tests RENAME COLUMN expect TO criteria"),
+        ("exemplar",     "ALTER TABLE tests ADD COLUMN exemplar TEXT"),
     ],
     "runs": [
-        ("name", "ALTER TABLE runs ADD COLUMN name TEXT"),
+        ("name",       "ALTER TABLE runs ADD COLUMN name TEXT"),
+        # Track which expectation drove the LLM judge for this run
+        # (`criteria` or `exemplar`). NULL for historical rows; runner
+        # treats NULL as `criteria` for backward compat.
+        ("judge_mode", "ALTER TABLE runs ADD COLUMN judge_mode TEXT"),
     ],
     "run_results": [
         ("test_must_call",      "ALTER TABLE run_results ADD COLUMN test_must_call TEXT NOT NULL DEFAULT '[]'"),
@@ -259,6 +271,9 @@ _MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("time_reason",         "ALTER TABLE run_results ADD COLUMN time_reason TEXT NOT NULL DEFAULT ''"),
         ("input_tokens",        "ALTER TABLE run_results ADD COLUMN input_tokens INTEGER"),
         ("output_tokens",       "ALTER TABLE run_results ADD COLUMN output_tokens INTEGER"),
+        # Mirror the tests rename + new column in the snapshot table.
+        ("test_criteria",       "ALTER TABLE run_results RENAME COLUMN test_expect TO test_criteria"),
+        ("test_exemplar",       "ALTER TABLE run_results ADD COLUMN test_exemplar TEXT"),
     ],
 }
 
@@ -285,7 +300,7 @@ def _seed_defaults(conn: sqlite3.Connection) -> None:
     now = now_iso()
     rows = [
         (
-            t["id"], t["prompt"], t["expect"],
+            t["id"], t["prompt"], t["criteria"], t.get("exemplar"),
             json.dumps(t["must_call"]), json.dumps(t["must_not_call"]),
             json.dumps(t.get("at_most_once") or []),
             t.get("max_seconds"),
@@ -297,9 +312,9 @@ def _seed_defaults(conn: sqlite3.Connection) -> None:
     ]
     conn.executemany(
         """INSERT INTO tests
-           (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
-            mutates, tags, position, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           (id, prompt, criteria, exemplar, must_call, must_not_call, at_most_once,
+            max_seconds, mutates, tags, position, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         rows,
     )
 
@@ -310,7 +325,8 @@ def _row_to_test(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id":            row["id"],
         "prompt":        row["prompt"],
-        "expect":        row["expect"],
+        "criteria":      row["criteria"],
+        "exemplar":      row["exemplar"],
         "must_call":     json.loads(row["must_call"]),
         "must_not_call": json.loads(row["must_not_call"]),
         "at_most_once":  json.loads(row["at_most_once"]),
@@ -383,11 +399,13 @@ def create_test(test: dict[str, Any]) -> None:
         ).fetchone()
         conn.execute(
             """INSERT INTO tests
-               (id, prompt, expect, must_call, must_not_call, at_most_once, max_seconds,
-                mutates, tags, position, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (id, prompt, criteria, exemplar, must_call, must_not_call,
+                at_most_once, max_seconds, mutates, tags, position,
+                created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                test["id"], test["prompt"], test["expect"],
+                test["id"], test["prompt"], test["criteria"],
+                test.get("exemplar"),
                 json.dumps(test.get("must_call") or []),
                 json.dumps(test.get("must_not_call") or []),
                 json.dumps(test.get("at_most_once") or []),
@@ -403,12 +421,13 @@ def update_test(test_id: str, test: dict[str, Any]) -> None:
     with connect() as conn:
         conn.execute(
             """UPDATE tests
-               SET prompt = ?, expect = ?, must_call = ?, must_not_call = ?,
+               SET prompt = ?, criteria = ?, exemplar = ?,
+                   must_call = ?, must_not_call = ?,
                    at_most_once = ?, max_seconds = ?, mutates = ?, tags = ?,
                    updated_at = ?
                WHERE id = ?""",
             (
-                test["prompt"], test["expect"],
+                test["prompt"], test["criteria"], test.get("exemplar"),
                 json.dumps(test.get("must_call") or []),
                 json.dumps(test.get("must_not_call") or []),
                 json.dumps(test.get("at_most_once") or []),
@@ -427,12 +446,17 @@ def delete_test(test_id: str) -> None:
 
 # ── Run CRUD ──────────────────────────────────────────────────────────────────
 
-def create_run(model: str, mcp_url: str, runs_per_test: int) -> int:
+def create_run(
+    model: str,
+    mcp_url: str,
+    runs_per_test: int,
+    judge_mode: str = "criteria",
+) -> int:
     with connect() as conn:
         cur = conn.execute(
-            """INSERT INTO runs (started_at, status, model, mcp_url, runs_per_test)
-               VALUES (?, 'running', ?, ?, ?)""",
-            (now_iso(), model, mcp_url, runs_per_test),
+            """INSERT INTO runs (started_at, status, model, mcp_url, runs_per_test, judge_mode)
+               VALUES (?, 'running', ?, ?, ?, ?)""",
+            (now_iso(), model, mcp_url, runs_per_test, judge_mode),
         )
         return cur.lastrowid
 
@@ -587,25 +611,26 @@ def list_runs_for_test(test_id: str, limit: int = 50) -> list[dict[str, Any]]:
 def save_run_result(run_id: int, test: dict[str, Any], iteration: int, result: dict[str, Any]) -> int:
     """Persist one iteration of one test inside a run. Returns the inserted id.
 
-    Snapshots the full eval rubric (prompt/expect + all assertions + mutates)
-    so later edits to the `tests` row don't mutate what this run was scored
-    against. The run detail page renders from these columns, never from the
-    live `tests` row.
+    Snapshots the full eval rubric (prompt + criteria + exemplar + all
+    assertions + mutates) so later edits to the `tests` row don't mutate
+    what this run was scored against. The run detail page renders from
+    these columns, never from the live `tests` row.
     """
     usage = result.get("usage") or {}
     with connect() as conn:
         cur = conn.execute(
             """INSERT INTO run_results
-               (run_id, test_id, test_prompt, test_expect,
+               (run_id, test_id, test_prompt, test_criteria, test_exemplar,
                 test_must_call, test_must_not_call, test_at_most_once,
                 test_max_seconds, test_mutates, iteration,
                 passed, tool_ok, judge_ok, at_most_once_ok, time_ok,
                 tool_reason, judge_reason, at_most_once_reason, time_reason,
                 tools_called, response_text, elapsed_seconds,
                 input_tokens, output_tokens, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                run_id, test["id"], test["prompt"], test["expect"],
+                run_id, test["id"], test["prompt"],
+                test["criteria"], test.get("exemplar"),
                 json.dumps(test.get("must_call") or []),
                 json.dumps(test.get("must_not_call") or []),
                 json.dumps(test.get("at_most_once") or []),

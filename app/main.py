@@ -345,7 +345,8 @@ def _parse_max_seconds(raw: str) -> float | None:
 def test_create(
     id:            str  = Form(...),
     prompt:        str  = Form(...),
-    expect:        str  = Form(...),
+    criteria:      str  = Form(...),
+    exemplar:      str  = Form(""),
     must_call:     str  = Form(""),
     must_not_call: str  = Form(""),
     at_most_once:  str  = Form(""),
@@ -358,7 +359,8 @@ def test_create(
     db.create_test({
         "id":            id.strip(),
         "prompt":        prompt.strip(),
-        "expect":        expect.strip(),
+        "criteria":      criteria.strip(),
+        "exemplar":      exemplar.strip() or None,
         "must_call":     _parse_tool_list(must_call),
         "must_not_call": _parse_tool_list(must_not_call),
         "at_most_once":  _parse_tool_list(at_most_once),
@@ -384,7 +386,8 @@ def test_edit_form(request: Request, test_id: str, tab: str = "edit") -> HTMLRes
 def test_update(
     test_id:       str,
     prompt:        str  = Form(...),
-    expect:        str  = Form(...),
+    criteria:      str  = Form(...),
+    exemplar:      str  = Form(""),
     must_call:     str  = Form(""),
     must_not_call: str  = Form(""),
     at_most_once:  str  = Form(""),
@@ -396,7 +399,8 @@ def test_update(
         raise HTTPException(status_code=404, detail=f"Test '{test_id}' not found")
     db.update_test(test_id, {
         "prompt":        prompt.strip(),
-        "expect":        expect.strip(),
+        "criteria":      criteria.strip(),
+        "exemplar":      exemplar.strip() or None,
         "must_call":     _parse_tool_list(must_call),
         "must_not_call": _parse_tool_list(must_not_call),
         "at_most_once":  _parse_tool_list(at_most_once),
@@ -427,6 +431,9 @@ async def run_create(request: Request) -> RedirectResponse:
         runs_per_test = 1
     runs_per_test = max(1, min(runs_per_test, 50))
     model = (form.get("model") or "").strip() or None
+    judge_mode = (form.get("judge_mode") or "criteria").strip()
+    if judge_mode not in ("criteria", "exemplar"):
+        judge_mode = "criteria"
 
     auth_err = await asyncio.to_thread(_ensure_calendly_auth)
     if auth_err:
@@ -435,7 +442,9 @@ async def run_create(request: Request) -> RedirectResponse:
         )
 
     try:
-        run_id = await runner.start_run(test_ids, runs_per_test, model=model)
+        run_id = await runner.start_run(
+            test_ids, runs_per_test, model=model, judge_mode=judge_mode,
+        )
     except runner.RunInProgressError as e:
         active_ids = e.args[0] if e.args else []
         pretty = ", ".join(f"#{i}" for i in active_ids) or "unknown"

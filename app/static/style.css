@@ -207,6 +207,7 @@ code {
 .pill-running  { background: #e3f2fd; color: #1565c0; }
 .pill-complete { background: #e8f5e9; color: #2e7d32; }
 .pill-error    { background: #ffebee; color: #c62828; }
+.pill-exemplar { background: #ede7f6; color: #5e35b1; }
 .pill-neutral  { background: #f0f0f0; color: #555; margin-left: 0.3rem; }
 .action {
     font-size: 0.85rem; color: #666; margin-left: 0.5rem;

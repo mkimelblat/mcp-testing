@@ -42,9 +42,15 @@
     </label>
 
     <label>
-        <span>Expectation (for LLM judge)</span>
-        <textarea name="expect" rows="6" required>{{ test.expect if test else '' }}</textarea>
-        <small class="muted">Describe what a good response looks like from the user's point of view.</small>
+        <span>Criteria (judge rubric)</span>
+        <textarea name="criteria" rows="6" required>{{ test.criteria if test else '' }}</textarea>
+        <small class="muted">Abstract criteria the LLM judge applies in <code>criteria</code> mode — describes what a good response looks like.</small>
+    </label>
+
+    <label>
+        <span>Exemplar (reference response)</span>
+        <textarea name="exemplar" rows="6" placeholder="Concrete sample answer used by the judge in `exemplar` mode (Gemini-style submission grading). Leave blank if not yet populated.">{{ test.exemplar if test and test.exemplar else '' }}</textarea>
+        <small class="muted">A concrete reference answer. Used by the judge in <code>exemplar</code> mode. Optional — runs in <code>exemplar</code> mode for an eval with no exemplar fail explicitly.</small>
     </label>
 
     <div class="form-row">

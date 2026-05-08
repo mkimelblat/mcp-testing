@@ -94,6 +94,7 @@ async def start_run(
     test_ids: list[str],
     runs_per_test: int,
     model: str | None = None,
+    judge_mode: str = "criteria",
 ) -> int:
     """
     Create a run record and kick off execution in the background. Returns
@@ -107,7 +108,7 @@ async def start_run(
         raise RunInProgressError(sorted(_active_runs))
 
     effective_model = model or MODEL
-    run_id = db.create_run(effective_model, get_mcp_url(), runs_per_test)
+    run_id = db.create_run(effective_model, get_mcp_url(), runs_per_test, judge_mode)
     _active_runs.add(run_id)
 
     tests_by_id = {t["id"]: t for t in db.list_tests()}
@@ -116,15 +117,15 @@ async def start_run(
         for tid in test_ids if tid in tests_by_id
     )
 
-    asyncio.create_task(_execute_run(run_id, test_ids, runs_per_test, effective_model))
+    asyncio.create_task(_execute_run(run_id, test_ids, runs_per_test, effective_model, judge_mode))
     return run_id
 
 
 async def _execute_run(
-    run_id: int, test_ids: list[str], runs_per_test: int, model: str,
+    run_id: int, test_ids: list[str], runs_per_test: int, model: str, judge_mode: str,
 ) -> None:
     try:
-        await _execute_run_inner(run_id, test_ids, runs_per_test, model)
+        await _execute_run_inner(run_id, test_ids, runs_per_test, model, judge_mode)
         db.mark_run_finished(run_id, "complete")
         await _broadcast(run_id, {"type": "complete", "status": "complete"})
     except Exception as e:
@@ -137,7 +138,7 @@ async def _execute_run(
 
 
 async def _execute_run_inner(
-    run_id: int, test_ids: list[str], runs_per_test: int, model: str,
+    run_id: int, test_ids: list[str], runs_per_test: int, model: str, judge_mode: str,
 ) -> None:
     token = os.environ.get("CALENDLY_MCP_TOKEN")
     if not token:
@@ -164,7 +165,9 @@ async def _execute_run_inner(
             # Use run_test for a single iteration so each result streams independently.
             result = await run_test(
                 prompt=test["prompt"],
-                expect=test["expect"],
+                criteria=test["criteria"],
+                exemplar=test.get("exemplar"),
+                judge_mode=judge_mode,
                 runs=1,
                 token=token,
                 client=client,
@@ -185,7 +188,8 @@ async def _execute_run_inner(
                     "id":                  result_id,
                     "test_id":             test_id,
                     "test_prompt":         test["prompt"],
-                    "test_expect":         test["expect"],
+                    "test_criteria":       test["criteria"],
+                    "test_exemplar":       test.get("exemplar"),
                     "test_must_call":      test.get("must_call") or [],
                     "test_must_not_call":  test.get("must_not_call") or [],
                     "test_at_most_once":   test.get("at_most_once") or [],

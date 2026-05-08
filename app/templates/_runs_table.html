@@ -28,7 +28,10 @@
             </td>
             <td><time class="local-time" datetime="{{ r.started_at }}">{{ r.started_at }}</time></td>
             <td>{% if r.finished_at %}<time class="local-time" datetime="{{ r.finished_at }}">{{ r.finished_at }}</time>{% else %}—{% endif %}</td>
-            <td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
+            <td>
+                <span class="pill pill-{{ r.status }}">{{ r.status }}</span>
+                {% if r.judge_mode == "exemplar" %}<span class="pill pill-exemplar" title="Judge graded responses against the exemplar reference">exemplar</span>{% endif %}
+            </td>
             <td>
                 {% if r.results_total %}
                     <span class="pill pill-{{ 'ok' if r.results_passed == r.results_total else ('warn' if r.results_passed * 4 >= r.results_total * 3 else 'fail') }}">

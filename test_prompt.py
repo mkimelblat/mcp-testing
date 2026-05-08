@@ -173,6 +173,45 @@ def _format_judge_user_message(criteria: str, tools_called: list[str], response_
     )
 
 
+# Exemplar-mode judge: grade Actual Response against Reference Response.
+# Substantive equivalence — same key facts and structure, looser wording.
+_JUDGE_SYSTEM_PROMPT_EXEMPLAR = (
+    "Evaluate whether an AI assistant's Actual Response is substantively "
+    "equivalent to a Reference Response.\n\n"
+    "You will be given:\n"
+    "  - The Reference Response (a concrete exemplar of an acceptable answer).\n"
+    "  - The list of tools the assistant called.\n"
+    "  - The Actual Response.\n\n"
+    "Substantive equivalence means: the Actual Response covers the same key "
+    "facts and structure as the Reference Response, even if the wording, "
+    "ordering, or formatting differ. Reasonable formatting variations "
+    "(bullets vs. prose, slightly different phrasings, equivalent "
+    "abbreviations) are acceptable.\n\n"
+    "Penalize the Actual Response when:\n"
+    "  - It states facts that do NOT appear in the Reference (fabrication).\n"
+    "  - It misses key facts that the Reference includes.\n"
+    "  - It contradicts the Reference (different values for the same field).\n\n"
+    "Do NOT penalize for:\n"
+    "  - Different wording that conveys the same meaning.\n"
+    "  - Different ordering of items in a list when order doesn't matter.\n"
+    "  - Additional minor framing or context that doesn't contradict the "
+    "Reference.\n\n"
+    "Judge pass/fail strictly on substantive equivalence. Default to PASS "
+    "when the Actual Response covers the Reference's facts and adds nothing "
+    "fabricated.\n\n"
+    'Reply with JSON only: {"pass": true|false, "reason": "one sentence"}'
+)
+
+
+def _format_judge_user_message_exemplar(reference: str, tools_called: list[str], response_text: str) -> str:
+    tools_str = ", ".join(tools_called) if tools_called else "(none)"
+    return (
+        f"Reference Response:\n{reference}\n\n"
+        f"Tools called: {tools_str}\n\n"
+        f"Actual Response:\n{response_text}"
+    )
+
+
 # ── OpenAI path ───────────────────────────────────────────────────────────────
 
 def _openai_mcp_config(token: str) -> dict:
@@ -221,6 +260,25 @@ async def _openai_judge(
         "messages": [
             {"role": "system", "content": _JUDGE_SYSTEM_PROMPT},
             {"role": "user",   "content": _format_judge_user_message(criteria, tools_called, response_text)},
+        ],
+        "response_format": {"type": "json_object"},
+    }
+    if not model.startswith(("o1", "o3", "o4", "gpt-5")):
+        kwargs["temperature"] = 0
+    result = await client.chat.completions.create(**kwargs)
+    data = json.loads(result.choices[0].message.content)
+    return data["pass"], data["reason"]
+
+
+async def _openai_judge_exemplar(
+    response_text: str, exemplar: str, tools_called: list[str], model: str,
+) -> tuple[bool, str]:
+    client = _get_openai_client()
+    kwargs: dict = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": _JUDGE_SYSTEM_PROMPT_EXEMPLAR},
+            {"role": "user",   "content": _format_judge_user_message_exemplar(exemplar, tools_called, response_text)},
         ],
         "response_format": {"type": "json_object"},
     }
@@ -296,13 +354,25 @@ async def run_once(
 
 async def judge(
     response_text: str,
-    criteria:      str,
+    criteria:      str | None = None,
+    exemplar:      str | None = None,
+    judge_mode:    str = "criteria",
     tools_called:  list[str] | None = None,
     client = None,  # deprecated
     model:  str | None = None,  # main model (ignored — judge is pinned to JUDGE_MODEL)
 ) -> tuple[bool, str]:
+    """Grade a response. `judge_mode` selects which expectation drives:
+      - "criteria" (default): grade against the abstract `criteria` rubric.
+      - "exemplar": grade for substantive equivalence with the `exemplar`
+        reference response. If `exemplar` is empty / None / whitespace,
+        short-circuit with judge_ok=False (no LLM call) so the gap is
+        surfaced clearly rather than silently falling back."""
     tools = tools_called or []
-    return await _openai_judge(response_text, criteria, tools, JUDGE_MODEL)
+    if judge_mode == "exemplar":
+        if not exemplar or not exemplar.strip():
+            return (False, "no exemplar populated for exemplar-mode grading")
+        return await _openai_judge_exemplar(response_text, exemplar, tools, JUDGE_MODEL)
+    return await _openai_judge(response_text, criteria or "", tools, JUDGE_MODEL)
 
 
 # ── Tool-trace check (provider-agnostic) ──────────────────────────────────────
@@ -347,9 +417,13 @@ def check_time(elapsed: float, max_seconds: float | None) -> tuple[bool, str]:
 
 async def run_test(
     prompt:        str,
-    expect:        str,
     runs:          int,
     token:         str,
+    *,
+    criteria:      str | None = None,
+    exemplar:      str | None = None,
+    judge_mode:    str = "criteria",
+    expect:        str | None = None,  # deprecated alias for `criteria`; kept for CLI compat
     client = None,  # deprecated; ignored
     label:         str = "",
     must_call:     list[str]   | None = None,
@@ -362,10 +436,19 @@ async def run_test(
     Run a test case N times. Each run scored on four dimensions:
       - tool_ok:         did required tools fire? did forbidden tools NOT fire?
       - at_most_once_ok: no tool in `at_most_once` was called more than once
-      - judge_ok:        does the text meet the user-goal criterion?
+      - judge_ok:        does the text meet the chosen expectation?
       - time_ok:         elapsed <= max_seconds (if set)
     Overall pass = all four.
+
+    `judge_mode` selects which expectation drives the judge: "criteria"
+    (abstract rubric, default) or "exemplar" (substantive equivalence
+    against a concrete reference response).
     """
+    # Backward compat: callers pre-criteria/exemplar split passed `expect`
+    # positionally or by keyword. Treat it as `criteria` if no criteria
+    # was supplied directly.
+    if criteria is None and expect is not None:
+        criteria = expect
     results = []
     prefix  = f"  [{label}] " if label else "  "
     m       = model or MODEL
@@ -391,7 +474,14 @@ async def run_test(
             elapsed = (time.monotonic() - t0) - _retry_wait.get()
             tool_ok,         tool_reason         = check_tools(tools_called, must_call, must_not_call)
             at_most_once_ok, at_most_once_reason = check_at_most_once(tools_called, at_most_once)
-            judge_ok,        judge_reason        = await judge(text, expect, tools_called=tools_called, model=m)
+            judge_ok,        judge_reason        = await judge(
+                text,
+                criteria=criteria,
+                exemplar=exemplar,
+                judge_mode=judge_mode,
+                tools_called=tools_called,
+                model=m,
+            )
         except Exception as e:
             judge_reason = f"Exception: {e}"
 
@@ -462,7 +552,9 @@ async def _cli_main():
     print(f"Runs   : {args.runs}\n")
 
     result = await run_test(
-        args.prompt, args.expect, args.runs, token, model=args.model,
+        args.prompt, args.runs, token,
+        criteria=args.expect,
+        model=args.model,
     )
 
     n, total = result["passed"], result["total"]

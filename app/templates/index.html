@@ -68,6 +68,13 @@
             Runs per eval
             <input type="number" name="runs_per_test" value="5" min="1" max="50">
         </label>
+        <label>
+            Judge against
+            <select name="judge_mode">
+                <option value="criteria" selected>Criteria (rubric)</option>
+                <option value="exemplar">Exemplar (reference response)</option>
+            </select>
+        </label>
         {% if all_tags %}
         <label>
             Tag
