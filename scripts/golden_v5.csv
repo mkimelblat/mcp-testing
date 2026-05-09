@@ -20,7 +20,7 @@ check_when_busy,4,When am I busy this Thursday?
 check_when_busy,5,Show me my busy blocks for next Monday
 check_when_busy,6,when am i free tomorrow morning?
 check_when_busy,7,What times am I tied up Wednesday?
-find_event_type_available_times,1,What's my next available slot for a Coffee Chat?
+find_event_type_available_times,1,What slots are open for Coffee Chats next week?
 find_event_type_available_times,2,When am I free for Coffee Chats Thursday?
 find_event_type_available_times,3,What's my Coffee Chat availability tomorrow afternoon?
 find_event_type_available_times,4,Show me when people can book a Coffee Chat next week
@@ -52,9 +52,9 @@ create_single_use_link_custom,1,Create a single-use link for my Coffee Chat with
 create_single_use_link_custom,2,Generate a 15-minute single-use link for Coffee Chat
 create_single_use_link_custom,3,Make me a 15-min single-use Coffee Chat link
 create_single_use_link_custom,4,I want a one-time link for my Coffee Chat but only 15 minutes long
-create_single_use_link_custom,5,coffee chat one-time link, 15 min only
-create_single_use_link_custom,6,Single-use Coffee Chat link, override duration to 15 min
-create_single_use_link_custom,7,Build me a one-time Coffee Chat link, 15 minutes
+create_single_use_link_custom,5,"coffee chat one-time link, 15 min only"
+create_single_use_link_custom,6,"Single-use Coffee Chat link, override duration to 15 min"
+create_single_use_link_custom,7,"Build me a one-time Coffee Chat link, 15 minutes"
 update_event_type,1,Update my Coffee Chat event type to 45 minutes
 update_event_type,2,Make my Coffee Chat 45 minutes instead of 30
 update_event_type,3,Change Coffee Chat duration to 45 minutes
@@ -64,11 +64,11 @@ update_event_type,6,I want my Coffee Chat to be 45 minutes
 update_event_type,7,Bump Coffee Chat up to a 45-minute meeting
 create_event_type,1,Create a new 30-minute event type called Intro Call to meet via Zoom
 create_event_type,2,Set up a 15-min Quick Sync event type
-create_event_type,3,Make a new Discovery Call event type, 30 minutes, on Google Meet
+create_event_type,3,"Make a new Discovery Call event type, 30 minutes, on Google Meet"
 create_event_type,4,spin up a new 30-min event type called intro
-create_event_type,5,I need a new event type: 30 min, Zoom, called Intro Call
-create_event_type,6,Add an event type ""Quick Sync"" that's 15 minutes
-create_event_type,7,Create a new event called Discovery Call, 60 min, Google Meet
+create_event_type,5,"I need a new event type: 30 min, Zoom, called Intro Call"
+create_event_type,6,"Add an event type """"Quick Sync"""" that's 15 minutes"
+create_event_type,7,"Create a new event called Discovery Call, 60 min, Google Meet"
 update_event_type_schedule,1,Remove Thursdays from my Coffee Chat event type's availability
 update_event_type_schedule,2,Stop offering Coffee Chats on Fridays
 update_event_type_schedule,3,Drop Thursday from my Coffee Chat schedule
@@ -76,20 +76,20 @@ update_event_type_schedule,4,take thursday off coffee chat availability
 update_event_type_schedule,5,I don't want Coffee Chats on Thursdays anymore
 update_event_type_schedule,6,Make my Coffee Chat unavailable on Thursdays
 update_event_type_schedule,7,Remove Thursday availability for Coffee Chat
-cancel_meeting,1,Cancel my 2:30pm Coffee Chat appointment next Thursday
-cancel_meeting,2,Cancel my next Coffee Chat
-cancel_meeting,3,Drop my Coffee Chat with cash0902 on Thursday
-cancel_meeting,4,cancel my coffee chat thursday
-cancel_meeting,5,I need to cancel the Coffee Chat with cash0902 tomorrow
+cancel_meeting,1,Cancel my next Coffee Chat
+cancel_meeting,2,Cancel my upcoming Coffee Chat
+cancel_meeting,3,Drop my Coffee Chat with cash0902
+cancel_meeting,4,cancel my next coffee chat
+cancel_meeting,5,I need to cancel the Coffee Chat with cash0902
 cancel_meeting,6,Pull the plug on my next Coffee Chat
 cancel_meeting,7,Cancel my next upcoming meeting
-book_meeting,1,Book a Coffee Chat with cash0902@gmail.com for next Thursday at 2:30pm
-book_meeting,2,Set up a 30-min Coffee Chat with cash0902@gmail.com for the next available slot
-book_meeting,3,Schedule cash0902@gmail.com into my Coffee Chat tomorrow at 10
-book_meeting,4,book coffee chat with cash0902@gmail.com thursday 2p
-book_meeting,5,I want to book a Coffee Chat with cash0902@gmail.com for tomorrow at 9am
-book_meeting,6,Get cash0902@gmail.com on my calendar for a Coffee Chat next Thursday at 2:30pm
-book_meeting,7,Schedule a Coffee Chat with cash0902@gmail.com tomorrow morning
+book_meeting,1,Book a Coffee Chat with cash0902@gmail.com for the next available slot
+book_meeting,2,Set up a 30-min Coffee Chat with cash0902@gmail.com — next available slot
+book_meeting,3,Schedule cash0902@gmail.com into my Coffee Chat at the next available time
+book_meeting,4,book cash0902@gmail.com into next available coffee chat slot
+book_meeting,5,Book the next available Coffee Chat with cash0902@gmail.com
+book_meeting,6,Get cash0902@gmail.com on my calendar for a Coffee Chat at the next open slot
+book_meeting,7,Schedule a Coffee Chat with cash0902@gmail.com at the next available time
 invite_team_member,1,Invite newhire@calendly.com to my Calendly team
 invite_team_member,2,Add newhire@calendly.com as a team member on Calendly
 invite_team_member,3,Send a Calendly team invite to newhire@calendly.com
