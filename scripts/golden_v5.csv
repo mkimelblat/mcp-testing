@@ -111,10 +111,10 @@ list_availability_schedules,4,show my availability schedules
 list_availability_schedules,5,Pull up my availability schedules
 list_availability_schedules,6,What schedules am I using on Calendly?
 list_availability_schedules,7,List the availability rule sets I've set up
-mark_no_show,1,Mark Michael (cash0902@gmail.com) as a no-show for yesterday's Coffee Chat
-mark_no_show,2,Flag cash0902@gmail.com as a no-show for the Coffee Chat that just ended
-mark_no_show,3,cash0902 didn't show up to my coffee chat — mark them as a no-show
-mark_no_show,4,Tag yesterday's Coffee Chat with cash0902 as a no-show
-mark_no_show,5,Mark the recent Coffee Chat with Michael as no-show
-mark_no_show,6,Record cash0902@gmail.com as not having attended yesterday's Coffee Chat
-mark_no_show,7,cash0902 was a no-show for the coffee chat — mark it
+mark_no_show,1,Mark Michael (cash0902@gmail.com) as a no-show for the 9am Coffee Chat today
+mark_no_show,2,Flag cash0902@gmail.com as a no-show for the 9am Coffee Chat today
+mark_no_show,3,cash0902 didn't show up to my 9am coffee chat — mark them as a no-show
+mark_no_show,4,Tag today's 9am Coffee Chat with cash0902 as a no-show
+mark_no_show,5,Mark the 9am Coffee Chat with Michael as no-show
+mark_no_show,6,Record cash0902@gmail.com as not having attended the 9am Coffee Chat today
+mark_no_show,7,cash0902 was a no-show for the 9am coffee chat — mark it

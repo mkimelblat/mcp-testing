@@ -1,0 +1,323 @@
+case_id,prompt_index,prompt,exemplar,tools_in_scope
+list_event_types,1,List my event types,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,2,What meetings can people book with me?,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,3,Show me my Calendly meeting types,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,4,What event types do I have set up?,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,5,Walk me through what I'm offering on Calendly,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,6,give me my event types,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_event_types,7,Tell me about the event types on my account,"Here are your event types:
+- **30 Minute Meeting** — 60 minutes
+- **A Managed Event** — 30 minutes
+- **Coffee Chat** — 30 minutes
+- **New Meeting** — 5 minutes
+- **Z Managed Event** — 30 minutes",event_types-list_event_types
+list_meetings,1,What meetings do I have this week?,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,2,Show me my upcoming Coffee Chats,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,3,What's on my Calendly schedule tomorrow?,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,4,List my next 5 Calendly meetings,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,5,who's on my schedule this week?,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,6,Pull up my upcoming meetings,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+list_meetings,7,What Calendly bookings do I have coming up?,"Here are your upcoming Calendly meetings this week:
+- **Coffee Chat** with Michael Kimelblat — Friday at 9:00–9:30 AM PT (Google Meet)
+- **Coffee Chat** with Michael Kimelblat — Friday at 3:30–4:00 PM PT (Google Meet)",meetings-list_events
+check_when_busy,1,Am I free Thursday afternoon?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,2,What's my schedule look like tomorrow?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,3,Do I have time for a 30-min between 2 and 4 today?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,4,When am I busy this Thursday?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,5,Show me my busy blocks for next Monday,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,6,when am i free tomorrow morning?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+check_when_busy,7,What times am I tied up Wednesday?,"On Thursday, in your timezone (America/Los_Angeles), you are busy at:
+- 9:00 AM – 9:30 AM PT — **Coffee Chat** with Michael Kimelblat","users-get_current_user,availability-list_user_busy_times"
+find_event_type_available_times,1,What slots are open for Coffee Chats next week?,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,2,When am I free for Coffee Chats Thursday?,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,3,What's my Coffee Chat availability tomorrow afternoon?,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,4,Show me when people can book a Coffee Chat next week,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,5,find me open coffee chat slots,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,6,What times are open for Coffee Chats in the next 7 days?,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+find_event_type_available_times,7,List Coffee Chat openings between Monday and Friday,"Here are open slots for **Coffee Chat** next week (in your timezone, America/Los_Angeles):
+- Monday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Tuesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Wednesday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Thursday: 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+- Friday: 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM, 12:00 PM, …
+
+Slots run through 5:00 PM each day. Saturday and Sunday are unavailable.","event_types-list_event_types,event_types-list_event_type_available_times"
+get_scheduling_link,1,Get me the link for my Coffee Chat,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,2,What's the link people use to book a Coffee Chat with me?,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,3,Send me the URL for my Coffee Chat event type,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,4,Drop the booking link for my Coffee Chat,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,5,give me my coffee chat link,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,6,Where do people sign up for a Coffee Chat with me?,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+get_scheduling_link,7,What's the public URL for my Coffee Chat?,Here's the scheduling link for **Coffee Chat**: https://calendly.com/mkimelblat/coffee-chat — share it with anyone you want to book a meeting with.,"users-get_current_user,event_types-list_event_types"
+reschedule_meeting,1,Reschedule my next Coffee Chat,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,2,I need to move my next Coffee Chat,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,3,Move my Coffee Chat with cash0902 to a different time,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,4,push my next coffee chat back,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,5,Help me reschedule the Coffee Chat with cash0902,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,6,Can you change the time on my upcoming Coffee Chat?,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+reschedule_meeting,7,My next Coffee Chat needs to be moved,"Your next **Coffee Chat** is with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT.
+
+What new date/time would you like to reschedule it to? I can show available Coffee Chat slots, or you can give me a specific time. If you'd prefer, I can also cancel and rebook directly.","users-get_current_user,meetings-list_events"
+create_single_use_link,1,Generate a one-time scheduling link I can send a candidate for my Coffee Chat,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,2,Give me a single-use link for my Coffee Chat,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,3,Create a single-use Coffee Chat link,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,4,I need a one-time link for my Coffee Chat,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,5,make me a one-shot booking link for coffee chat,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,6,Send me a single-use scheduling link for my Coffee Chat,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link,7,I want a link for one Coffee Chat booking only,"Here's a single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — share it with your candidate. Once it's used, it expires.","event_types-list_event_types,scheduling_links-create_single_use_scheduling_link"
+create_single_use_link_custom,1,Create a single-use link for my Coffee Chat with a 15-minute duration,"Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,2,Generate a 15-minute single-use link for Coffee Chat,"Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,3,Make me a 15-min single-use Coffee Chat link,"Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,4,I want a one-time link for my Coffee Chat but only 15 minutes long,"Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,5,"coffee chat one-time link, 15 min only","Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,6,"Single-use Coffee Chat link, override duration to 15 min","Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+create_single_use_link_custom,7,"Build me a one-time Coffee Chat link, 15 minutes","Created a 15-minute single-use scheduling link for **Coffee Chat**: https://calendly.com/d/abc1-def2-ghi3 — when used, the booking will be 15 minutes (overriding the default 30). Share with your invitee.","event_types-list_event_types,shares-create_share"
+update_event_type,1,Update my Coffee Chat event type to 45 minutes,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,2,Make my Coffee Chat 45 minutes instead of 30,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,3,Change Coffee Chat duration to 45 minutes,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,4,switch coffee chat to 45 min,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,5,Change Coffee Chat duration to 45,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,6,I want my Coffee Chat to be 45 minutes,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+update_event_type,7,Bump Coffee Chat up to a 45-minute meeting,"Updated **Coffee Chat** to 45 minutes. All other settings (location, kind, availability rules) remain unchanged.","event_types-list_event_types,event_types-get_event_type,event_types-update_event_type"
+create_event_type,1,Create a new 30-minute event type called Intro Call to meet via Zoom,"Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,2,Set up a 15-min Quick Sync event type,"Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,3,"Make a new Discovery Call event type, 30 minutes, on Google Meet","Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,4,spin up a new 30-min event type called intro,"Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,5,"I need a new event type: 30 min, Zoom, called Intro Call","Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,6,"Add an event type """"Quick Sync"""" that's 15 minutes","Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+create_event_type,7,"Create a new event called Discovery Call, 60 min, Google Meet","Done — I created the **Intro Call** event type.
+- Name: Intro Call
+- Duration: 30 minutes
+- Location: Zoom
+- Status: Active
+- Scheduling link: https://calendly.com/mkimelblat/intro-call","users-get_current_user,event_types-list_event_types,event_types-create_event_type"
+update_event_type_schedule,1,Remove Thursdays from my Coffee Chat event type's availability,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,2,Stop offering Coffee Chats on Fridays,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,3,Drop Thursday from my Coffee Chat schedule,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,4,take thursday off coffee chat availability,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,5,I don't want Coffee Chats on Thursdays anymore,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,6,Make my Coffee Chat unavailable on Thursdays,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+update_event_type_schedule,7,Remove Thursday availability for Coffee Chat,"Removed Thursdays from **Coffee Chat** availability. Mon, Tue, Wed, Fri keep their existing 9:00 AM – 5:00 PM rules; Saturday and Sunday remain unavailable.","event_types-list_event_types,event_types-list_event_type_availability_schedule,event_types-update_event_type_availability_schedule"
+cancel_meeting,1,Cancel my next Coffee Chat,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,2,Cancel my upcoming Coffee Chat,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,3,Drop my Coffee Chat with cash0902,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,4,cancel my next coffee chat,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,5,I need to cancel the Coffee Chat with cash0902,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,6,Pull the plug on my next Coffee Chat,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+cancel_meeting,7,Cancel my next upcoming meeting,Just to confirm — you want me to cancel your **Coffee Chat** with Michael Kimelblat (cash0902@gmail.com) on Monday at 9:00 AM PT? Cancellation will notify Michael. Reply 'yes' (and optionally a reason) to confirm and I'll proceed.,meetings-list_events
+book_meeting,1,Book a Coffee Chat with cash0902@gmail.com for the next available slot,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,2,Set up a 30-min Coffee Chat with cash0902@gmail.com — next available slot,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,3,Schedule cash0902@gmail.com into my Coffee Chat at the next available time,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,4,book cash0902@gmail.com into next available coffee chat slot,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,5,Book the next available Coffee Chat with cash0902@gmail.com,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,6,Get cash0902@gmail.com on my calendar for a Coffee Chat at the next open slot,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+book_meeting,7,Schedule a Coffee Chat with cash0902@gmail.com at the next available time,"Booked your Coffee Chat:
+- Event type: **Coffee Chat**
+- Invitee: **Michael Kimelblat** (cash0902@gmail.com)
+- Date and time: Monday at 9:30 AM PT
+- Location: Google Meet","users-get_current_user,event_types-list_event_types,event_types-list_event_type_available_times,meetings-create_invitee"
+invite_team_member,1,Invite newhire@calendly.com to my Calendly team,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,2,Add newhire@calendly.com as a team member on Calendly,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,3,Send a Calendly team invite to newhire@calendly.com,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,4,invite newhire@calendly.com,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,5,I want newhire@calendly.com on my Calendly team,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,6,Get newhire@calendly.com onto our Calendly org,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+invite_team_member,7,Add newhire@calendly.com to the Calendly team,Invitation sent to **newhire@calendly.com**. They'll receive an email and can accept it to join your Calendly team.,"organizations-list_organization_invitations,organizations-create_organization_invitation"
+list_routing_form_submissions,1,Show me submissions to my first routing form,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,2,List submissions on my routing form,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,3,"What submissions do I have on my ""test"" routing form?","Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,4,show me my routing form responses,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,5,Pull up the submissions for my routing form,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,6,Who's submitted my routing form?,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_routing_form_submissions,7,List recent submissions to my routing form,"Your **test** routing form has no submissions yet. Once invitees submit the form, their responses will appear here.","routing_forms-list_routing_forms,routing_forms-list_routing_form_submissions"
+list_availability_schedules,1,Show me my availability schedules,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,2,List my Calendly availability schedules,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,3,What named availability schedules do I have?,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,4,show my availability schedules,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,5,Pull up my availability schedules,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,6,What schedules am I using on Calendly?,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+list_availability_schedules,7,List the availability rule sets I've set up,"Here are your availability schedules:
+- **Working hours** (default)
+- **test**
+- **another**",availability-list_user_availability_schedules
+mark_no_show,1,Mark Michael (cash0902@gmail.com) as a no-show for the 9am Coffee Chat today,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,2,Flag cash0902@gmail.com as a no-show for the 9am Coffee Chat today,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,3,cash0902 didn't show up to my 9am coffee chat — mark them as a no-show,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,4,Tag today's 9am Coffee Chat with cash0902 as a no-show,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,5,Mark the 9am Coffee Chat with Michael as no-show,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,6,Record cash0902@gmail.com as not having attended the 9am Coffee Chat today,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
+mark_no_show,7,cash0902 was a no-show for the 9am coffee chat — mark it,Marked **Michael Kimelblat** (cash0902@gmail.com) as a no-show for the 9:00 AM Coffee Chat today. The no-show is now on record for that meeting.,"meetings-list_events,meetings-list_event_invitees,meetings-create_invitee_no_show"
