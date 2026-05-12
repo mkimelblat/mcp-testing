@@ -535,6 +535,21 @@ async def run_rename(run_id: int, request: Request) -> Response:
     return Response(status_code=204)
 
 
+@app.post("/runs/{run_id}/cancel")
+async def run_cancel(run_id: int) -> Response:
+    """Request cancellation of an in-progress run. Returns 204 if the
+    cancel flag was set; 409 if the run isn't currently running."""
+    run = db.get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    if not runner.request_cancel(run_id):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Run {run_id} is not currently running (status: {run['status']})",
+        )
+    return Response(status_code=204)
+
+
 @app.get("/runs/{run_id}/stream")
 async def run_stream(request: Request, run_id: int) -> EventSourceResponse:
     run = db.get_run(run_id)

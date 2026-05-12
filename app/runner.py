@@ -26,6 +26,7 @@ MAX_CONCURRENT_RUNS = 3
 _active_runs: set[int] = set()
 _subscribers: dict[int, list[asyncio.Queue]] = {}
 _run_plans: dict[int, int] = {}
+_cancel_events: dict[int, asyncio.Event] = {}
 
 
 def current_run_ids() -> list[int]:
@@ -34,6 +35,21 @@ def current_run_ids() -> list[int]:
 
 def planned_total(run_id: int) -> int | None:
     return _run_plans.get(run_id)
+
+
+def request_cancel(run_id: int) -> bool:
+    """Signal the run to stop after the current iteration. Returns True if
+    the cancel flag was set (i.e. the run was active), False if the run
+    is not currently running."""
+    ev = _cancel_events.get(run_id)
+    if ev is None or run_id not in _active_runs:
+        return False
+    ev.set()
+    return True
+
+
+class RunCancelled(Exception):
+    """Raised inside the runner when a cancellation has been requested."""
 
 
 # ── Event fanout ──────────────────────────────────────────────────────────────
@@ -110,6 +126,7 @@ async def start_run(
     effective_model = model or MODEL
     run_id = db.create_run(effective_model, get_mcp_url(), runs_per_test, judge_mode)
     _active_runs.add(run_id)
+    _cancel_events[run_id] = asyncio.Event()
 
     tests_by_id = {t["id"]: t for t in db.list_tests()}
     _run_plans[run_id] = sum(
@@ -128,6 +145,9 @@ async def _execute_run(
         await _execute_run_inner(run_id, test_ids, runs_per_test, model, judge_mode)
         db.mark_run_finished(run_id, "complete")
         await _broadcast(run_id, {"type": "complete", "status": "complete"})
+    except RunCancelled:
+        db.mark_run_finished(run_id, "cancelled")
+        await _broadcast(run_id, {"type": "complete", "status": "cancelled"})
     except Exception as e:
         db.mark_run_finished(run_id, "error")
         await _broadcast(run_id, {"type": "error", "message": str(e)})
@@ -135,6 +155,7 @@ async def _execute_run(
     finally:
         _active_runs.discard(run_id)
         _run_plans.pop(run_id, None)
+        _cancel_events.pop(run_id, None)
 
 
 async def _execute_run_inner(
@@ -146,8 +167,12 @@ async def _execute_run_inner(
 
     client = make_client()
     all_tests = {t["id"]: t for t in db.list_tests()}
+    cancel_event = _cancel_events.get(run_id)
 
     for test_id in test_ids:
+        if cancel_event and cancel_event.is_set():
+            raise RunCancelled()
+
         test = all_tests.get(test_id)
         if not test:
             continue
@@ -162,6 +187,8 @@ async def _execute_run_inner(
         })
 
         for i in range(effective_runs):
+            if cancel_event and cancel_event.is_set():
+                raise RunCancelled()
             # Use run_test for a single iteration so each result streams independently.
             result = await run_test(
                 prompt=test["prompt"],

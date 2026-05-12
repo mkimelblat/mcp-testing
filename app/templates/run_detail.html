@@ -42,7 +42,16 @@
         </p>
     </div>
     <div id="run-header-actions" class="header-actions">
-        {% if not is_live and groups %}
+        {% if is_live %}
+        <button type="button" class="btn btn-secondary"
+                hx-post="/runs/{{ run.id }}/cancel"
+                hx-swap="outerHTML"
+                hx-disabled-elt="this"
+                hx-confirm="Cancel this run? Partial results will be retained."
+                title="Stop the run after the current iteration. Already-completed iterations stay in the results.">
+            Cancel run
+        </button>
+        {% elif groups %}
         {% include "_run_header_actions.html" %}
         {% endif %}
     </div>
@@ -121,10 +130,26 @@
       // Without this, htmx-sse would auto-reconnect and hit the replay
       // branch, piling duplicate groups onto the page. Close the
       // EventSource on complete so it stays closed.
+      //
+      // Also update the status pill from the final status carried in the
+      // event payload (complete | cancelled | error), and remove the
+      // Cancel button if it's still around.
       document.body.addEventListener('htmx:sseMessage', (e) => {
-          if (e.detail.type === 'complete' && e.detail.target) {
-              e.detail.target.close();
-          }
+          if (e.detail.type !== 'complete') return;
+          try {
+              const data   = JSON.parse(e.detail.data || '{}');
+              const status = data.status;
+              if (status) {
+                  const pill = document.getElementById('run-status');
+                  if (pill) {
+                      pill.textContent = status;
+                      pill.className   = `pill pill-${status}`;
+                  }
+              }
+          } catch (_) {}
+          const cancelBtn = document.querySelector('[hx-post$="/cancel"]');
+          if (cancelBtn) cancelBtn.remove();
+          if (e.detail.target) e.detail.target.close();
       });
     </script>
     {% endif %}
