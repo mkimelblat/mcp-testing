@@ -397,7 +397,7 @@ async def judge(
     response_text: str,
     criteria:      str | None = None,
     exemplar:      str | None = None,
-    judge_mode:    str = "criteria",
+    judge_mode:    str = "exemplar",
     tools_called:  list[str] | None = None,
     client = None,  # deprecated
     model:  str | None = None,  # main model (ignored — judge is pinned to JUDGE_MODEL)
@@ -463,7 +463,7 @@ async def run_test(
     *,
     criteria:      str | None = None,
     exemplar:      str | None = None,
-    judge_mode:    str = "criteria",
+    judge_mode:    str = "exemplar",
     expect:        str | None = None,  # deprecated alias for `criteria`; kept for CLI compat
     client = None,  # deprecated; ignored
     label:         str = "",

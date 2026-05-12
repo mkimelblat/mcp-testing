@@ -110,7 +110,7 @@ async def start_run(
     test_ids: list[str],
     runs_per_test: int,
     model: str | None = None,
-    judge_mode: str = "criteria",
+    judge_mode: str = "exemplar",
 ) -> int:
     """
     Create a run record and kick off execution in the background. Returns

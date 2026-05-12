@@ -432,9 +432,9 @@ async def run_create(request: Request) -> RedirectResponse:
         runs_per_test = 1
     runs_per_test = max(1, min(runs_per_test, 50))
     model = (form.get("model") or "").strip() or None
-    judge_mode = (form.get("judge_mode") or "criteria").strip()
+    judge_mode = (form.get("judge_mode") or "exemplar").strip()
     if judge_mode not in ("criteria", "exemplar"):
-        judge_mode = "criteria"
+        judge_mode = "exemplar"
 
     auth_err = await asyncio.to_thread(_ensure_calendly_auth)
     if auth_err:

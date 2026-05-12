@@ -450,7 +450,7 @@ def create_run(
     model: str,
     mcp_url: str,
     runs_per_test: int,
-    judge_mode: str = "criteria",
+    judge_mode: str = "exemplar",
 ) -> int:
     with connect() as conn:
         cur = conn.execute(
