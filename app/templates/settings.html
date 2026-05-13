@@ -31,11 +31,10 @@
         </p>
         <form method="post" action="/settings/mcp-env" class="settings-form">
             <label for="mcp-env">Environment</label>
-            <select id="mcp-env" name="mcp_env">
+            <select id="mcp-env" name="mcp_env" onchange="this.form.submit()">
                 <option value="prod"    {% if mcp_env == "prod"    %}selected{% endif %}>Production (mcp.calendly.com)</option>
                 <option value="staging" {% if mcp_env == "staging" %}selected{% endif %}>Staging (mcp.staging.calendly-internal.com)</option>
             </select>
-            <button type="submit" class="btn btn-secondary">Switch</button>
         </form>
         <p class="muted" style="font-size:0.8rem;margin-top:-0.25rem;">
             Switching disconnects the current Calendly session — tokens are tied to the issuing server.
