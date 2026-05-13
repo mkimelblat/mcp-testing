@@ -1,8 +1,22 @@
+{% if mcp_env == "staging" %}
+<button type="button" class="btn btn-secondary"
+        hx-post="/fixtures/reset-and-setup"
+        hx-target="#fixture-result"
+        hx-swap="innerHTML"
+        hx-disabled-elt="this"
+        hx-indicator="#fixture-spinner"
+        {% if not env_status.calendly %}disabled{% endif %}
+        title="Reset prior-run mutations, then re-establish baseline fixtures (Coffee Chat, cash0902 booking, etc.) on the staging account.">
+    Reset fixtures
+    <span id="fixture-spinner" class="htmx-indicator">…</span>
+</button>
+{% endif %}
 <form method="post" action="/runs">
     {% for test_id, _ in groups %}
     <input type="hidden" name="test_ids" value="{{ test_id }}">
     {% endfor %}
     <input type="hidden" name="runs_per_test" value="{{ run.runs_per_test }}">
     <input type="hidden" name="model" value="{{ run.model }}">
+    <input type="hidden" name="judge_mode" value="{{ run.judge_mode }}">
     <button type="submit" class="btn btn-primary">Re-run</button>
 </form>

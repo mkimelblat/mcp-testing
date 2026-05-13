@@ -520,6 +520,8 @@ def run_detail(request: Request, run_id: int, q: str = "") -> HTMLResponse:
             "is_live":       run["status"] == "running",
             "planned_total": runner.planned_total(run_id) or len(results),
             "query":         query,
+            "mcp_env":       "staging" if os.environ.get("MCP_ENV") == "staging" else "prod",
+            "env_status":    _env_status(),
         },
     )
 
