@@ -214,18 +214,30 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
         print(f"  ✓ upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} exists")
         return
 
-    # Look up the Coffee Chat event type's actual configured locations.
-    # Hardcoding google_conference fails on accounts where the event type
-    # is configured with a different kind (zoom_conference, physical, etc.).
+    # Read the Coffee Chat event type's location config — the booking
+    # must mirror it (matching `kind`, plus the per-variant `location`
+    # string when the kind requires one: physical, custom, outbound_call,
+    # invitee_specified). Omitting `location` on the request makes
+    # Calendly pick a default that may not match the event type and
+    # surface 'Specified location kind is not configured for this
+    # event type'.
     location_payload: dict | None = None
     ets = call("event_types-list_event_types", {"user": user_uri})
     for et in ets.get("collection", []):
         if (et.get("name") or "").strip().lower() == "coffee chat":
             for loc in et.get("locations") or []:
                 kind = loc.get("kind")
-                if kind:
-                    location_payload = {"kind": kind}
-                    break
+                if not kind:
+                    continue
+                payload: dict = {"kind": kind}
+                # Carry forward the venue / phone / value string for
+                # variants that require it. Conference kinds (zoom,
+                # google_conference, etc.) don't have/need it.
+                venue = loc.get("location")
+                if venue:
+                    payload["location"] = venue
+                location_payload = payload
+                break
             break
 
     print(f"  no upcoming Coffee Chat with {FIXTURE_INVITEE_EMAIL} — finding a slot...")
@@ -239,7 +251,7 @@ def step3_upcoming_meeting(user_uri: str, coffee_uri: str, user_tz: str) -> None
         print("  ⚠ no available slots in the next 7 days. Cannot book.")
         return
     slot = slot_list[0]
-    loc_str = location_payload["kind"] if location_payload else "(none configured on event type)"
+    loc_str = json.dumps(location_payload) if location_payload else "(none configured on event type)"
     print(f"  booking slot {slot['start_time']} (location: {loc_str})...")
     args: dict = {
         "post_invitee_request": {
